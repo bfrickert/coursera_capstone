@@ -34,15 +34,17 @@ easy.business <- lapply(yelp.business, function(x){ return(list(x$business_id, x
                                                        if(is.null(x$attributes$Corkage)) NA else x$attributes$Corkage,
                                                        if(is.null(x$attributes$`BYOB/Corkage`)) NA else x$attributes$`BYOB/Corkage`,
                                                        if(is.null(x$attributes$Alcohol)) NA else x$attributes$Alcohol,
-                                                       if(is.null(x$attributes$`Waiter Service`)) NA else x$attributes$`Waiter Service`
+                                                       if(is.null(x$attributes$`Waiter Service`)) NA else x$attributes$`Waiter Service`,
+                                                       if(is.null(x$attributes$`Wi-Fi`)) NA else x$attributes$`Wi-Fi`
                                                        ))})
 
 
-df.business <-data.frame(matrix(unlist(easy.business), ncol=35,byrow=T))
+df.business <-data.frame(matrix(unlist(easy.business), ncol=36,byrow=T))
 names(df.business) <- c('business_id','name','open_sun','closed_sun','open_mon','closed_mon'
                ,'open_tues','closed_tues','open_wed','closed_wed','open_thu','closed_thu'
                ,'open_fri','closed_fri','open_sat','closed_sat', 'full_address','city','state',
-               'review_count','open','stars','lat','lon','type','categories', 'by_appt','price_range','happy_hour','smoking','byob','corkage','byob_corkage', 'alcohol', 'waiter_service')
+               'review_count','open','stars','lat','lon','type','categories', 'by_appt','price_range','happy_hour','smoking','byob','corkage','byob_corkage', 'alcohol', 
+               'waiter_service', 'wifi')
 
 attrs <- lapply(yelp.business, function(x){ return(x$attributes)})
 attrs_names <- unique(unlist(lapply(attrs, names)))

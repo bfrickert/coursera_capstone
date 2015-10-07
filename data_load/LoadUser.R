@@ -2,7 +2,7 @@ library(rjson)
 
 json_file <- "yelp_academic_dataset_user.json"
 con = file(json_file, "r")
-input <- readLines(con, 15)
+input <- readLines(con, -1L)
 yelp.user <- lapply(X=input,fromJSON)
 
 
@@ -18,15 +18,15 @@ easy.user <- lapply(yelp.user, function(x){ return(list(x$user_id,
                                                         if(is.null(x$compliments$cool)) NA else x$compliments$cool,
                                                         if(is.null(x$compliments$funny)) NA else x$compliments$funny,
                                                         if(is.null(x$compliments$cute)) NA else x$compliments$cute,
-                                                        if(is.null(x$compliments$plain)) NA else x$compliments$plain
+                                                        if(is.null(x$compliments$plain)) NA else x$compliments$plain, x$name
                                                         
 ))})
 
 
-df.user <-data.frame(matrix(unlist(easy.user), ncol=14,byrow=T))
+df.user <-data.frame(matrix(unlist(easy.user), ncol=15,byrow=T), stringsAsFactors = F)
 names(df.user) <- c('user_id', 'useful_votes', 'funny_votes', 'cool_votes', 'average_stars','fan_count', 'friend_count',
                     'hot_compliments', 'writer_compliments', 'photos_compliments', 'cool_compliments', 'funny_compliments', 
-                    'cute_compliments', 'plain_compliments')
+                    'cute_compliments', 'plain_compliments', 'name')
 head(df.user,n=10)
 
 

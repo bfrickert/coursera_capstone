@@ -11,4 +11,4 @@ easy.tip <- lapply(yelp.tip, function(x){ return(list(x$business_id, x$user_id, 
 
 df.tip <-data.frame(matrix(unlist(easy.tip), ncol=6,byrow=T))
 names(df.tip) <- c('business_id','user_id', 'date', 'text','likes','type')
-head(df.tip,n=10)
+head(df.tip,n=1000)
