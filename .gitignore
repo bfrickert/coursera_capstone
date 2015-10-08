@@ -1,6 +1,7 @@
 # History files
 .Rhistory
 .Rapp.history
+.RData
 
 # Example code in package build process
 *-Ex.R
@@ -15,3 +16,5 @@ vignettes/*.pdf
 # data and documentation
 *.json
 *.pdf
+*.csv
+*.tsv

@@ -1,21 +1,17 @@
-library(rjson)
-
-json_file <- "yelp_academic_dataset_review.json"
-con = file(json_file, "r")
-input <- readLines(con, 100)
-yelp.review <- lapply(X=input,fromJSON)
-
-easy.review <- lapply(yelp.review, function(x){ return(list(x$business_id, x$user_id, x$review_id, x$date,
-                                                     if(is.null(x$votes$useful)) NA else x$votes$useful,
-                                                     if(is.null(x$votes$funny)) NA else x$votes$funny,
-                                                     if(is.null(x$votes$cool)) NA else x$votes$cool,
-                                                     x$text, x$stars,x$type
-                                                     ))})
-
-df.review <-data.frame(matrix(unlist(easy.review), ncol=10,byrow=T))
-names(df.review) <- c('business_id','user_id','review_id', 'date', 'useful_votes', 'funny_votes', 'cool_votes', 'text','stars','type')
-head(df.review,n=100)
-
+library(jsonlite)
 
 df.review <- stream_in(file("yelp_academic_dataset_review.json"))
-head(df.review,n=100)
+df.review.votes <- data.frame(matrix(unlist(df.review$votes), ncol=3,byrow=F))
+df.review.votes <- cbind(df.review$user_id,df.review.votes)
+names(df.review.votes) <- c('user_id', 'funny_votes', 'useful_votes', 'votes_cool')
+df.review <- df.review[,-1]
+df.comb <- cbind(df.review, df.review.votes)
+
+rm(df.review);rm(df.review.votes)
+
+df.comb$review <- gsub('\t', ' ',gsub('\n', ' ',df.comb$text))
+df.comb$text <- NA
+
+write.table(df.comb, 'reviews.tsv',sep='\t',row.names=F)
+
+rm(df.comb)
