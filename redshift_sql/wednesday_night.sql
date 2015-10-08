@@ -13,4 +13,7 @@ limit 22200;
 
 select * from brian.reviews r where r.business_id = 'GJp4zTQPPsCEkUitopGfAQ' order by r.stars;
 
-select * from brian.reviews r where lower(r.review) like '%lobster%'; -- seafood?
+select b.categories, r.* from brian.reviews r join brian.business b on b.business_id = r.business_id 
+where (lower(r.review) like '%lobster%' and lower(b.categories) not like '%restaurant%') 
+   --or b.categories like '%seafood%'
+   ; 
