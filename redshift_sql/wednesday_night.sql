@@ -1,4 +1,4 @@
-select b.name, "0-Wednesday", b.full_address, b.stars, r.*, b.city, b.state, r.avg_stars - b.stars relative_performance
+select b.name, "0-Wednesday", b.full_address, b.stars, r.*, b.city, b.state, r.avg_stars - b.stars relative_performance, b.categories
 from brian.checkins ch
 join brian.business b on b.business_id = ch.business_id 
 join (select b.business_id, avg(r.stars*1.00000) avg_stars, count(distinct u.user_id) user_count, avg(u.friend_count*1.00000) avg_friend_count, avg(u.hot_compliments*1.00000) hottie, 
