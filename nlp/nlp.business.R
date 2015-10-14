@@ -3,15 +3,21 @@ library(tm)
 library(qdap)
 
 drv <- dbDriver("PostgreSQL")
-con <- dbConnect(drv)
+con <- dbConnect(drv, host="miley.cda5nmppsk8w.us-east-1.redshift.amazonaws.com", 
+                 port="5439", dbname="ncarbdw", user="admin")
 stars <- dbGetQuery(con,"select stars,name,business_id from brian.business order by 1 desc")
+reviews <- dbGetQuery(con,"select r.review 
+from brian.reviews r join brian.business b on b.business_id = r.business_id 
+where (lower(r.review) like '%lobster%' or lower(r.review) like '%seafood%') 
+  and (lower(b.categories) not like '%food%' and lower(b.categories) not like '%restaurant%')")
 rm(con);rm(drv)
-write.table(stars[,2,3],'stars.tsv',sep='\t',row.names=F)
+write.table(stars,'stars.tsv',sep='\t',row.names=F)
+write.table(reviews,'reviews.tsv',sep='\t',row.names=F)
 
 dest <- '.'
 
 # create corpus
-docs <- Corpus(DirSource(dest,pattern="tsv"))
+docs <- Corpus(DirSource(dest,pattern="tsv"));rm(stars);rm(reviews);rm(dest)
 # remove numbers
 docs <- tm_map(docs, removeNumbers)
 
@@ -92,7 +98,34 @@ dtms
 findFreqTerms(dtms, lowfreq=15)
 
 # find words with high correlation to state
-findAssocs(dtms,"state", corlimit=0.7)
+findAssocs(dtms,term="family", corlimit=0.01)
 
 # make a plot of freq terms with correlation above .6
 plot(dtms,terms =findFreqTerms(dtms, lowfreq=100),corThreshold=0.6)
+
+library(reshape2)
+
+dtm.mat <- as.matrix(dtm)
+
+dtm.melt <- melt(dtm.mat)
+
+dtm.melt <- as.data.frame(dtm.melt)
+
+knitr::kable(head(dtm.melt,n=10))
+
+term.table <- table(nchar(as.character(dtm.melt$Terms)))
+
+# get mode of word counts
+term.mode <- as.numeric(names(term.table[which(term.table==max(term.table))]))
+
+# make condition to highlight mode
+cond <- nchar(as.character(dtm.melt$Terms))*dtm.melt$value == term.mode
+
+#make a pretty graph
+ggplot(dtm.melt) + geom_histogram(data=subset(dtm.melt,cond==FALSE),binwidth=1,aes(x=nchar(as.character(Terms))*value,fill=Docs))+
+  facet_grid(Docs~.) + geom_histogram(data=subset(dtm.melt,cond==TRUE),binwidth=1,aes(x=nchar(as.character(Terms))*value),title="Mode",fill="red")+
+  labs(x="Number of Letters",y="Number of Words") + xlim(1,20)  +
+  guides(fill = guide_legend(nrow = 9, byrow = TRUE ,title="Author"))+ 
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
+  ggtitle("Length of each word \n by Author")+
+  geom_text(data=data.frame(x=6.5, y=30, label="Mode", stat=c("ta")),aes(x,y,label=label),size=3, inherit.aes=TRUE)

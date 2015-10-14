@@ -14,10 +14,10 @@ limit 22200;
 
 select * from brian.reviews r where r.business_id = 'GJp4zTQPPsCEkUitopGfAQ' order by r.stars;
 
-select b.categories, r.* from brian.reviews r join brian.business b on b.business_id = r.business_id 
-where (lower(r.review) like '%lobster%' and lower(b.categories) not like '%restaurant%') 
-   --or b.categories like '%seafood%'
-   ; 
+select r.review 
+from brian.reviews r join brian.business b on b.business_id = r.business_id 
+where (lower(r.review) like '%lobster%' or lower(r.review) like '%seafood%') 
+  and (lower(b.categories) not like '%food%' and lower(b.categories) not like '%restaurant%'); 
 
 
 select ch.business_id from brian.checkins ch
@@ -27,3 +27,17 @@ select column_name
 from information_schema.columns where table_schema = 'brian' and 
 table_name like '%checkins%' and substring(column_name, 1, 2) in ('0-','1-', '2-', '3-', '4-','5-') order by substring(column_name, 3,4), substring(column_name, 1, 2);
 
+select avg(funny_votes), count(8) from brian.reviews where funny_votes > 2 limit 455;
+
+
+select r.stars, r.review from brian.business b
+join brian.reviews r on r.business_id = b.business_id
+where lower(b.categories) like '%casino%' 
+  and (lower(r.review) like '%lost%' 
+          or lower(r.review) like '%losing%' 
+          or lower(r.review) like '%ripped off%' 
+          or lower(r.review) like '%rip off%' 
+          or lower(r.review) like '%rip-off%')
+  and r.stars < 3;
+  
+select count(distinct business_id), categories from brian.business group by categories;
