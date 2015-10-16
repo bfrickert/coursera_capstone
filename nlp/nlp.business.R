@@ -5,19 +5,29 @@ library(qdap)
 drv <- dbDriver("PostgreSQL")
 con <- dbConnect(drv, host="miley.cda5nmppsk8w.us-east-1.redshift.amazonaws.com", 
                  port="5439", dbname="ncarbdw", user="admin")
-stars <- dbGetQuery(con,"select stars,name,business_id from brian.business order by 1 desc")
-reviews <- dbGetQuery(con,"select r.review 
-from brian.reviews r join brian.business b on b.business_id = r.business_id 
-where (lower(r.review) like '%lobster%' or lower(r.review) like '%seafood%') 
-  and (lower(b.categories) not like '%food%' and lower(b.categories) not like '%restaurant%')")
+joy <- dbGetQuery(con,"select categories from brian.top_categories")
+misery <- dbGetQuery(con,"select
+        b.categories 
+    from
+        brian.business b
+    join
+        brian.reviews r
+            on r.business_id = b.business_id     --where lower(b.categories) like '%bail bond%'
+             
+    group by
+        b.categories    
+    having
+        count(8) > 29    and count(distinct r.business_id) > 5 -- and avg(r.stars * 1.0000000) <3
+        order by avg(r.stars * 1.0000000) limit 500
+")
 rm(con);rm(drv)
-write.table(stars,'stars.tsv',sep='\t',row.names=F)
-write.table(reviews,'reviews.tsv',sep='\t',row.names=F)
+write.table(joy,'joy.tsv',sep='\t',row.names=F)
+write.table(misery,'misery.tsv',sep='\t',row.names=F)
 
 dest <- '.'
 
 # create corpus
-docs <- Corpus(DirSource(dest,pattern="tsv"));rm(stars);rm(reviews);rm(dest)
+docs <- Corpus(DirSource(dest,pattern="tsv"));rm(joy);rm(misery);rm(dest)
 # remove numbers
 docs <- tm_map(docs, removeNumbers)
 
@@ -98,10 +108,10 @@ dtms
 findFreqTerms(dtms, lowfreq=15)
 
 # find words with high correlation to state
-findAssocs(dtms,term="family", corlimit=0.01)
+findAssocs(dtms,term="bar", corlimit=0.8)
 
 # make a plot of freq terms with correlation above .6
-plot(dtms,terms =findFreqTerms(dtms, lowfreq=100),corThreshold=0.6)
+plot(dtms,terms =findFreqTerms(dtms, lowfreq=50),corThreshold=0.6)
 
 library(reshape2)
 
@@ -129,3 +139,5 @@ ggplot(dtm.melt) + geom_histogram(data=subset(dtm.melt,cond==FALSE),binwidth=1,a
   theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
   ggtitle("Length of each word \n by Author")+
   geom_text(data=data.frame(x=6.5, y=30, label="Mode", stat=c("ta")),aes(x,y,label=label),size=3, inherit.aes=TRUE)
+
+dtm.mat

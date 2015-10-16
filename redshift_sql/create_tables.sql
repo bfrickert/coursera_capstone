@@ -168,3 +168,49 @@ REMOVEQUOTES
 IGNOREHEADER as 1
 DATEFORMAT AS 'YYYY-MM-DD';
 
+--Create nem top categories
+drop table brian.top_categories;
+create table brian.top_categories ( categories varchar(4000), avg_stars float, review_count int, biz_count int);
+truncate table brian.top_categories;
+insert into brian.top_categories
+select
+        b.categories,
+        avg(r.stars * 1.000000) avg_stars,
+        count(8) review_count,
+        count(distinct r.business_id) biz_count
+    from
+        brian.business b
+    join
+        brian.reviews r
+            on r.business_id = b.business_id     --where lower(b.categories) like '%bail bond%'
+             
+    group by
+        b.categories    
+    having
+        count(8) > 29    and count(distinct r.business_id) > 5 and avg(r.stars * 1.0000000) >=4
+    order by
+        2 desc--, random()
+        limit 500;
+
+--Take it away, bottom categories
+drop table brian.bottom_categories;
+create table brian.bottom_categories ( categories varchar(4000), avg_stars float, review_count int, biz_count int);
+truncate table brian.bottom_categories;
+insert into brian.bottom_categories
+select
+        b.categories,
+        avg(r.stars * 1.000000) avg_stars,
+        count(8) review_count,
+        count(distinct r.business_id) biz_count 
+    from
+        brian.business b
+    join
+        brian.reviews r
+            on r.business_id = b.business_id     --where lower(b.categories) like '%bail bond%'
+             
+    group by
+        b.categories    
+    having
+        count(8) > 29    and count(distinct r.business_id) > 5 -- and avg(r.stars * 1.0000000) <3
+        order by avg(r.stars * 1.0000000) limit 500;
+
