@@ -1,4 +1,7 @@
 library(RPostgreSQL)
+library(dplyr)
+library(RColorBrewer)
+library(ggplot2)
 
 drv <- dbDriver("PostgreSQL")
 con <- dbConnect(drv, host="miley.cda5nmppsk8w.us-east-1.redshift.amazonaws.com", 
@@ -56,6 +59,9 @@ select * from joyful
 minus
 select * from miserable)")
 
+avgs <- dbGetQuery(con,"select * from brian.user")
+
+rm(con);rm(drv)
 summary(miserables$average_stars)
 hist(miserables$average_stars)
 summary(joyous$average_stars)
@@ -64,23 +70,45 @@ t.test(miserables$average_stars,joyous$average_stars)
 t.test(miserables$fan_count,joyous$fan_count)
 t.test(miserables$friend_count,joyous$friend_count)
 t.test(miserables$hot_compliments,joyous$hot_compliments)
+t.test(miserables$writer_compliments, joyous$writer_compliments)
+t.test(miserables$funny_compliments, joyous$funny_compliments)
 
-dat <- cbind('joy', joyous)
-names(dat)[1] <- 'type'
-dat2 <- cbind('misery', miserables)
-names(dat2)[1] <- 'type'
+set.seed(6)
+joyous.out <- replicate( 100000, mean( sample(joyous$hot_compliments, 2000) ) )
+miserables.out <- replicate( 100000, mean( sample(miserables$hot_compliments, 2000) ) )
+avgs.out <- replicate( 100000, mean( sample(avgs$hot_compliments, 2000) ) )
+summary(joyous.out)
+summary(miserables.out)
+dat <- NA
+dat <- cbind('joy', joyous.out)
+names(dat) <- c('type','hot_compliments')
+dat2 <- NA
+dat2 <- cbind('misery', miserables.out)
+names(dat2) <- c('type', 'hot_compliments')
+dat <- data.frame(rbind(dat,dat2), stringsAsFactors = F)
+names(dat) <- c('type','hot_compliments')
+df.avgs <- data.frame(as.numeric(avgs.out), stringsAsFactors = F)
+names(df.avgs) <- 'hot_compliments'
 
-dat <- rbind(dat,dat2)
-ggplot(dat, aes(x=friend_count)) + 
-  geom_histogram(data=subset(dat,type == 'joy'),aes(y=..density..),      # Histogram with density instead of count on y-axis
+t.test(miserables.out, avgs.out)
+
+ggplot(dat, aes(x=as.numeric(hot_compliments))) + 
+  geom_histogram(data=filter(dat,type == 'joy'),aes(y=..density..),      # Histogram with density instead of count on y-axis
                  binwidth=.5,
                  colour="black", fill="red", alpha=.1) +
-  geom_vline(data=subset(dat,type == 'joy'),aes(xintercept=mean(friend_count, na.rm=T)),   # Ignore NA values for mean
-             color="red", linetype="dashed", size=1)+
-  geom_density(data=subset(dat,type == 'joy'),alpha=.2, fill="red") +
-  geom_histogram(data=subset(dat,type == 'misery'),aes(y=..density..),      # Histogram with density instead of count on y-axis
+  geom_vline(data=filter(dat,type == 'joy'),aes(xintercept=mean(as.numeric(hot_compliments))),   # Ignore NA values for mean
+             color=brewer.pal(8,"Set3")[4], linetype="dashed", size=2)+
+  geom_density(data=filter(dat,type == 'joy'),alpha=.4, fill=brewer.pal(11,"Spectral")[1]) +
+  geom_histogram(data=df.avgs,aes(y=..density..),      # Histogram with density instead of count on y-axis
                  binwidth=.5,
-                 colour="orange", fill="blue", alpha=.1) +
-  geom_density(data=subset(dat,type == 'misery'),alpha=.2, fill="blue") +
-  geom_vline(data=subset(dat,type == 'misery'),aes(xintercept=mean(friend_count, na.rm=T)),   # Ignore NA values for mean
-             color="blue", linetype="dashed", size=1) + theme_bw() + xlim(0,50)
+                 colour="pink", fill="orange", alpha=.1) +
+  geom_vline(data=df.avgs,aes(xintercept=mean(as.numeric(hot_compliments))),   # Ignore NA values for mean
+             color=brewer.pal(8,"Set3")[7], linetype="dashed", size=2)+
+  geom_density(data=df.avgs,alpha=.4, fill=brewer.pal(11,"Spectral")[6]) +
+  geom_histogram(data=filter(dat,type == 'misery'),aes(y=..density..),      # Histogram with density instead of count on y-axis
+                  binwidth=.5,
+                  colour="orange", fill="blue", alpha=.1) +
+  geom_density(data=filter(dat,type == 'misery'),alpha=.4, fill=brewer.pal(12,"Paired")[2]) +
+  geom_vline(data=filter(dat,type == 'misery'),aes(xintercept=mean(as.numeric(hot_compliments))),   # Ignore NA values for mean
+             color=brewer.pal(8,"Set3")[3], linetype="dashed", size=2) + theme_bw() + xlim(0,50)
+t.test(as.numeric(filter(dat, type=='misery')$hot_compliments), as.numeric(df.avgs$hot_compliments))
