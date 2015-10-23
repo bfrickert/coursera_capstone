@@ -1046,7 +1046,9 @@ delimiter '\t'
 REMOVEQUOTES
 IGNOREHEADER as 1;
 
-UNLOAD ('select b.categories, r.stars, u.*
+UNLOAD ('select b.categories, r.stars, u.useful_votes, u.funny_votes, u.cool_votes, u.fan_count, u.friend_count, u.hot_compliments, 
+u.writer_compliments, u.photos_compliments, u.cool_compliments, u.funny_compliments, u.cute_compliments, u.plain_compliments,
+dtm.*
 from brian.business b
 join brian.reviews r on r.business_id = b.business_id
 join brian.user u on u.user_id = r.user_id
@@ -1055,4 +1057,8 @@ join brian.dtm dtm on dtm.categories = b.categories
 where b.categories != ''''')
 TO 's3://ncarb-dsteam/Brian/Yelp/df.dtm.tsv'
 credentials 'aws_access_key_id=[access_key];aws_secret_access_key=[secret]'
-delimiter '\t';
+delimiter '\t'
+ALLOWOVERWRITE;
+
+
+select b.*, dtm.golf, dtm.air from (select top 550 * from brian.dtm) dtm join brian.business b on b.categories = dtm.categories;

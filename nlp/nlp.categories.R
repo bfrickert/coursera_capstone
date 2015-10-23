@@ -6,14 +6,13 @@ setwd('/home/ubuntu/coursera_capstone/')
 drv <- dbDriver("PostgreSQL")
 con <- dbConnect(drv, host="miley.cda5nmppsk8w.us-east-1.redshift.amazonaws.com", 
                  port="5439", dbname="ncarbdw", user="admin")
-cats <- dbGetQuery(con,"select categories from brian.business b where categories != ''")
-revs <- dbGetQuery(con, "select b.categories, r.stars, u.*
-                          from brian.business b
-                          join brian.reviews r on r.business_id = b.business_id
-                          join brian.user u on u.user_id = r.user_id
-                          join brian.random_reviews rr on rr.review_id = r.review_id
-                          where b.categories != ''")
-sapply(100000:(100000+nrow(cats)), function(i) {write.table(cats[i-100000,1], paste('tsvs/',i,'.tsv',sep=''),sep='\t')})
+cats <- dbGetQuery(con,"select distinct categories from brian.business b where categories != ''")
+avg.stars <-dbGetQuery(con,"select b.categories, avg(r.stars) avg_stars
+from  brian.business b
+join  brian.reviews r on r.business_id = r.business_id
+group by b.categories;")
+cats$seq <- 100001:(100000+nrow(cats))
+sapply(100000:(100000+nrow(cats)), function(i) {write.table(cats[i-100000,], paste('tsvs/',i,'.tsv',sep=''),sep='\t')})
 rm(con);rm(drv)
 write.table(cats,'cats.tsv',sep='\t',row.names=F)
 
@@ -50,18 +49,25 @@ m <- as.matrix(dtm)
 dim(m)   
 write.csv(m, file="dtm.csv") 
 df.dtm <- read.table("dtm.csv",sep=',',header=T,stringsAsFactors = F)
-
-
 df.dtm <- cbind(cats$categories, df.dtm[2:nrow(df.dtm),])
 names(df.dtm)[1]<-"categories"
+df.dtm$categories <- as.character(df.dtm$categories)
+df.stars <- inner_join(avg.stars,df.dtm,by='categories')
+rm(df.dtm);rm(avg.stars);rm(m);rm(cats)
 
-df.mg <- merge(d,revs, by='categories')
+fit <- lm(avg_stars ~ .,df.stars[,c(2,4:ncol(df.stars))])
 
-write.table(df.dtm, 'dtm.tsv',sep='\t',row.names=F)
-tail(cats)
+coefs <- data.frame(summary(fit)$coef)
+coefs$name <- row.names(coefs)
+names(coefs) <- c('estimate','se','t.val','p.val', 'name')
+prime.coefs <- arrange(filter(coefs, p.val<.05),p.val)
+
+fit2 <- lm(avg_stars ~ ., df.stars[,colnames(df.stars)%in%c('avg_stars', prime.coefs$names)])
 
 dtms <- removeSparseTerms(dtm, 0.1) # This makes a matrix that is 10% empty space, maximum.   
-findAssocs(dtm,term="ukrainian", corlimit=0.1)
+findAssocs(tdm,term="spas", corlimit=0.1)
+
+
 
 inspect(dtms)  
 freq[tail(ord)]  
