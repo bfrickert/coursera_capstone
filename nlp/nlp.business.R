@@ -1,6 +1,7 @@
 library(RPostgreSQL)
 library(tm)
 library(qdap)
+setwd('/home/ubuntu/coursera_capstone/')
 
 drv <- dbDriver("PostgreSQL")
 con <- dbConnect(drv, host="miley.cda5nmppsk8w.us-east-1.redshift.amazonaws.com", 
@@ -21,10 +22,10 @@ misery <- dbGetQuery(con,"select
         order by avg(r.stars * 1.0000000) limit 500
 ")
 rm(con);rm(drv)
-write.table(joy,'joy.tsv',sep='\t',row.names=F)
-write.table(misery,'misery.tsv',sep='\t',row.names=F)
+dest <- 'categories_nlp_docs'
 
-dest <- '.'
+write.table(joy,paste(dest,'joy.tsv',sep='/'),sep='\t',row.names=F)
+write.table(misery,paste(dest,'misery.tsv',sep='/'),sep='\t',row.names=F)
 
 # create corpus
 docs <- Corpus(DirSource(dest,pattern="tsv"));rm(joy);rm(misery);rm(dest)
@@ -49,7 +50,7 @@ docs <- tm_map(docs, content_transformer(tolower))
 qdocs <- as.data.frame(docs)
 
 # put in author names
-#qdocs$docs <- c("Brady","Curcio","France","Gangewere","Horne","Kandrack","Valchev","Vicinie","Whitaker")
+qdocs$docs <- c("joy","misery")
 
 # remove misc anomalies and white spaces
 qdocs$text <- clean(Trim(qdocs$text))
@@ -66,8 +67,6 @@ qdocs$text <- replace_abbreviation(qdocs$text)
 
 # remove all abbreviated middle names
 #qdocs$text <- mgsub(paste0(" ",letters,".")," ",qdocs$text)
-
-rm(dest)
 
 sent.docs <- sentSplit(qdocs,"text")
 
@@ -111,7 +110,7 @@ findFreqTerms(dtms, lowfreq=15)
 findAssocs(dtms,term="bar", corlimit=0.8)
 
 # make a plot of freq terms with correlation above .6
-plot(dtms,terms =findFreqTerms(dtms, lowfreq=50),corThreshold=0.6)
+plot(dtms,terms =findFreqTerms(dtms, lowfreq=50))
 
 library(reshape2)
 

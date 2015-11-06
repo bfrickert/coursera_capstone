@@ -63,15 +63,20 @@ ord <- order(freq)
 
 m <- as.matrix(dtm)   
 dim(m)   
-write.csv(m, file="dtm.csv") 
+write.csv(m, file="dtm.csv")
+write.table(avg.stars,'avg.stars.tsv',sep='\t',row.names=F)
 df.dtm <- read.table("dtm.csv",sep=',',header=T,stringsAsFactors = F)
+cats <- read.table('cats.tsv',sep='\t',header=T, stringsAsFactors = F)
 df.dtm <- cbind(cats$categories, df.dtm[2:nrow(df.dtm),])
 names(df.dtm)[1]<-"categories"
 df.dtm$categories <- as.character(df.dtm$categories)
+df.dtm <- df.dtm[,-2]
+avg.stars <- read.table('avg.stars.tsv',sep='\t',stringsAsFactors = F,header = T)
 df.stars <- inner_join(avg.stars,df.dtm,by='categories')
 
 rm(df.dtm);rm(avg.stars);rm(m);rm(cats)
 
+set.seed(666)
 trainIndex <- createDataPartition(df.stars$avg_stars, p = .8, list=F)
 train <- df.stars[trainIndex,]
 test <- df.stars[-trainIndex,]
@@ -109,18 +114,29 @@ test <- test[,colnames(test)%in%c('categories', 'avg_stars', prime.coefs$name)]
 fit4 <- lm(avg_stars ~ ., train[,2:ncol(train)])
 
 
-plot(df.stars$servic, df.stars$avg_stars, type = "n", frame = FALSE)
-fit.servic <- lm(avg_stars~servic,df.stars)
-abline(fit.servic, lwd = 2, col='pink')
-abline(h = mean(df.stars[df.stars$servic!=0,]$avg_stars), lwd = 3)
-abline(h = mean(df.stars[df.stars$servic==0,]$avg_stars), lwd = 3, col='yellow')
-fit.servic.feedback_quadrant <- lm(avg_stars~ servic * feedback_quadrant, df.stars)
-abline(coef(fit.servic.feedback_quadrant)[1], coef(fit.servic.feedback_quadrant)[2], lwd = 3, col='red')
-abline(coef(fit.servic.feedback_quadrant)[1] + coef(fit.servic.feedback_quadrant)[3], coef(fit.servic.feedback_quadrant)[2] + coef(fit.servic.feedback_quadrant)[4], lwd = 3, col='purple')
-points(df.stars[df.stars$servic!=0,]$servic, df.stars[df.stars$servic!=0,]$avg_stars, pch = 21, col = "black", bg = "lightblue", cex = 2)
-points(df.stars[df.stars$servic==0,]$servic, jitter(df.stars[df.stars$servic==0,]$avg_stars, 14), pch = 21, col = "black", bg = "salmon", cex = 2)
-summary(fit.servic.feedback_quadrant)$coefficients
+plot(df.stars$hair, df.stars$avg_stars, type = "n", frame = FALSE)
+# fit.hair <- lm(avg_stars~hair,df.stars)
+# abline(fit.hair, lwd = 2, col='pink')
+# abline(h = mean(df.stars[df.stars$hair!=0,]$avg_stars), lwd = 3)
+# abline(h = mean(df.stars[df.stars$hair==0,]$avg_stars), lwd = 3, col='yellow')
+fit.hair.feedback_quadrant <- lm(avg_stars~ hair * feedback_quadrant, df.stars)
+abline(coef(fit.hair.feedback_quadrant)[1], coef(fit.hair.feedback_quadrant)[2], lwd = 3, col='red')
+abline(coef(fit.hair.feedback_quadrant)[1] + coef(fit.hair.feedback_quadrant)[3], coef(fit.hair.feedback_quadrant)[2] + coef(fit.hair.feedback_quadrant)[4], lwd = 3, col='purple')
+points(df.stars[df.stars$hair!=0,]$hair, df.stars[df.stars$hair!=0,]$avg_stars, pch = 21, col = "black", bg = "lightblue", cex = 2)
+points(df.stars[df.stars$hair==0,]$hair, jitter(df.stars[df.stars$hair==0,]$avg_stars, 14), pch = 21, col = "black", bg = "salmon", cex = 2)
+summary(fit.hair.feedback_quadrant)
 
+plot(df.stars$restaur, df.stars$avg_stars, type = "n", frame = FALSE)
+# fit.restaur <- lm(avg_stars~restaur,df.stars)
+# abline(fit.restaur, lwd = 2, col='pink')
+# abline(h = mean(df.stars[df.stars$restaur!=0,]$avg_stars), lwd = 3)
+# abline(h = mean(df.stars[df.stars$restaur==0,]$avg_stars), lwd = 3, col='yellow')
+fit.restaur.feedback_quadrant <- lm(avg_stars~ restaur * feedback_quadrant, df.stars)
+abline(coef(fit.restaur.feedback_quadrant)[1], coef(fit.restaur.feedback_quadrant)[2], lwd = 3, col='red')
+abline(coef(fit.restaur.feedback_quadrant)[1] + coef(fit.restaur.feedback_quadrant)[3], coef(fit.restaur.feedback_quadrant)[2] + coef(fit.restaur.feedback_quadrant)[4], lwd = 3, col='purple')
+points(df.stars[df.stars$restaur!=0,]$restaur, df.stars[df.stars$restaur!=0,]$avg_stars, pch = 21, col = "black", bg = "lightblue", cex = 2)
+points(df.stars[df.stars$restaur==0,]$restaur, jitter(df.stars[df.stars$restaur==0,]$avg_stars, 14), pch = 21, col = "black", bg = "salmon", cex = 2)
+summary(fit.restaur.feedback_quadrant)
 
 
 
