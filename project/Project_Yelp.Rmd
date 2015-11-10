@@ -286,8 +286,6 @@ summary(fit.restaur.feedback_quadrant)
 
 ```
 
-
-
 ###Results
 Upon producing a normalized distribution of sample means, I can compare more clearly the mean values for people in each of the populations. The joyous are represented by the red vertical line, the miserables' mean is denoted by the blue line and the mean for the total population is marked with a green drop line.
 

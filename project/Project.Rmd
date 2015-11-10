@@ -1,80 +1,52 @@
-##Does Misery Love Categories?
+##But Does Company Love Misery?
 
 ###Introduction
-There are categories of businesses in the [Yelp! dataset](http://www.yelp.com/dataset_challenge) that may very well transcend the quality of the businesses within them. On average, the businesses within these categories enjoy very high ratings from Yelp! reviewers. Nevertheless, there are those individuals who have assigned to buisinesses within one of these **pleasure** categories at least one review that is at least 1.5 stars lower than the category's average rating. These people will heretofore be known as the **the miserables**. The inverse is also true: there are those who have assigned at least one rating at least 1.5 stars higher than the average category rating for a business in a **non-pleasure** category. They are **the joyous**.
+There are categories of businesses in the [Yelp! dataset](http://www.yelp.com/dataset_challenge) that may very well transcend the quality of the businesses within them. On average, the businesses within these categories enjoy very high ratings from Yelp! reviewers. Nevertheless, there are those individuals who have assigned to buisinesses within one of these **pleasure** categories at least one review that is at least 1.5 stars lower than the category's average rating. These people will heretofore be known as the **the miserables**. The inverse is also true: there are those who have assigned at least one rating at least 1.5 stars higher than the average category rating for a business in the on-average lowest rated categories. They will be referred to as **the joyous**.
 
-The question is: **are Yelp! reviewers who give good reviews to businesses in statistically unpleasurable categories perceived differently by the Yelp! community than those who give bad reviews in statistically pleasurable categories?** Is there a correlation between enjoying the a business in an on-average less enjoyed category and being positively perceived by others?
+My hypothesis is that **the joyous** are comprised of folks who receive more compliments from their peers, those being other Yelp! reviewers. And their counterparts, **the miserables** attract fewer compliments from other Yelp! reviewers. And that, furthermore, there is a correlation between how much positive feedback one receives and the likelihood he or she will enjoy a business in Yelp!.s
 
-```{r,echo=F}
+###Methods
 
-suppressMessages(library(tm))
-dest <- 'categories_nlp_docs'
-setwd('/home/ubuntu/coursera_capstone/')
+####Preparing the data
 
-# create corpus
-docs <- Corpus(DirSource(dest,pattern="tsv"));rm(dest)
-# remove numbers
-docs <- tm_map(docs, removeNumbers)
+Due to the sheer size of the Yelp! dataset, it was helpful to first move all the data (user, business, review, etc.) into a PostgreSQL database. It made aggregating 1.6 million reviews and over 310,000 users much easier, as earlier attempts at merging and aggregating these data sets proved impractical.
 
-# remove stop words
-docs <- tm_map(docs, removeWords, stopwords("SMART"))
+Because each business has multiple categories associated with them, I chose to concatenate all the categories for a business into one string, or category combination. And to find out which of these combinations are the most and least pleasurable, I only considered those category combinations with at least six businesses associated with them at least 30 reviews shared among their businesses.
 
-# make all letters lower case
-docs <- tm_map(docs, content_transformer(tolower))
-# remove numbers
-docs <- tm_map(docs, removeNumbers)
-
-# remove stop words
-docs <- tm_map(docs, removeWords, stopwords("SMART"))
-
-# make all letters lower case
-docs <- tm_map(docs, content_transformer(tolower))
-library(SnowballC)
-docs <- tm_map(docs, removePunctuation)
-docs <- tm_map(docs, stripWhitespace)
-
-docs <- tm_map(docs, stemDocument)
-
-dtm <- DocumentTermMatrix(docs)
-freq <- colSums(as.matrix(dtm))
-ord <- order(freq)
-
-
-# most frequent terms
-#freq[tail(ord,n=25)]
-dtms <- removeSparseTerms(dtm, 0.3)
-
-# make a plot of freq terms with correlation above .6
-# plot(dtms,terms =findFreqTerms(dtms, lowfreq=50))
-```
-
-```{r,echo=F,results='hide'}
-df <- data.frame(inspect(TermDocumentMatrix(docs)))
-```
-
-Here are some examples of words more commonly found in **pleasurable** categories than **unpleasurable** categories. Not surprisingly, these words are somewhat affirming -- active, life, beauty.
+**Top 3 most pleasing category combinations**:
 
 ```{r,echo=F, fig.height=1}
-suppressMessages(library(dplyr))
-df$diff <- df$joy.tsv - df$misery.tsv
-df$pct.diff <- df$diff/(df$joy.tsv + df$misery.tsv)
-df$names <- row.names(df)
-head(arrange(filter(df, misery.tsv > 0), desc(diff)))
+suppressMessages(library(RPostgreSQL))
+drv <- dbDriver("PostgreSQL")
+con <- dbConnect(drv, host="miley.cda5nmppsk8w.us-east-1.redshift.amazonaws.com", 
+                 port="5439", dbname="ncarbdw", user="admin")
+top10 <- dbGetQuery(con,"select categories from brian.top_categories limit 3;")
+names(top10) <- c('category')
+bottom10 <-  dbGetQuery(con,'select categories from brian.bottom_categories limit 3;')
+names(bottom10) <- c('category')
+top10$category
 ```
 
-It should be noted that to be considered among the **pleasure** categories, a category must include at least seven businesses and at least 30 reviews. The same is true for inclusion in the **unpleasurable** categories. And words more likely to appear in those can be found below:
-
+**Top 3 least pleasing category combinations**:
 ```{r,echo=F}
-head(arrange(filter(df, misery.tsv > 0), diff))
-# head(arrange(df, desc(joy.tsv)))
-# head(arrange(df, desc(misery.tsv)))
-
+bottom10$category
 ```
 
-But when one looks at the aggregation of all feedback (total number of compliments + number of friends and fans) for all reviewers (**the joyous**, **the miserables** and **the complete reviewer population**, respectively), one can see that the distributions are far from normal. In each histogram, the mode is clearly zero and the distributions starkly skew to the left, which is suggested by the calibrations on the x-axis.
+####The Joyous vs. The Miserables
 
-```{r,echo=F}
+Next I wanted to see if there is a difference in the amount of feedback the joyous and miserable receive. And to compare a normal distribution, I performed a sampling distribution of the sample means of hot compliments, funny compliments, total feedback (sum of compliment counts, friends and fans) and the number of reviews written for each of three populations -- the joyous, the miserables and the entire population of Yelp! reviewers. I took 2000 samples 100000 times.
+
+```{r, eval=F}
+joyous.out <- replicate( 100000, mean( sample(joyous$funny_compliments, 2000) ) )
+miserables.out <- replicate( 100000, mean( sample(miserables$funny_compliments, 2000) ) )
+avgs.out <- replicate( 100000, mean( sample(avgs$funny_compliments, 2000) ) )
+```
+
+The red droplines in the figures below denote the sampled mean for the joyous. Blue for the miserables. And green for the entire population of Yelp! reviewers.
+
+```{r,echo=F,fig.height=3}
 suppressMessages(library(ggplot2))
+suppressMessages(library(dplyr))
 library(RColorBrewer)
 g <- function(dat,dat.avgs, t = 'yests', x.label='x label') {
   ggplot(dat, aes(x=as.numeric(cnt))) + 
@@ -108,31 +80,7 @@ names(df.avgs.out)[1]<-'review.cnt'
 joyous.total <- read.table('../joyous.tsv',sep='\t',stringsAsFactors = F,header=T)
 miserables.total <- read.table('../miserables.tsv',sep='\t',stringsAsFactors = F,header=T)
 avgs.total <- read.table('../avgs.tsv',sep='\t',stringsAsFactors = F,header=T)
-```
 
-```{r,echo=F}
-par(mfrow = c(2, 2)) 
-hist(joyous.total$feedback,breaks=20,col='red')
-hist(miserables.total$feedback,breaks=20, col='blue')
-hist(avgs.total$feedback,breaks=20,col=brewer.pal(12,"Paired")[2])
-par(mfrow = c(1, 1)) 
-```
-
-###Methods
-In order to compare the means of these separate populations to know for sure if the mean of different funny_compliments values is different, I would need to take advantage of the Central Limit Theorem by producing sample distributions of the sample means.
-
-So I took 2000 samples from each population 100000 times.
-
-```{r, eval=F}
-joyous.out <- replicate( 100000, mean( sample(joyous$funny_compliments, 2000) ) )
-miserables.out <- replicate( 100000, mean( sample(miserables$funny_compliments, 2000) ) )
-avgs.out <- replicate( 100000, mean( sample(avgs$funny_compliments, 2000) ) )
-```
-
-###Results
-Upon producing a normalized distribution of sample means, I can compare more clearly the mean values for people in each of the populations. The joyous are represented by the red vertical line, the miserables' mean is denoted by the blue line and the mean for the total population is marked with a green drop line.
-
-```{r,echo=F}
 joyous.out <- df.joyous.out$review.cnt
 miserables.out <- df.miserables.out$review.cnt
 avgs.out <- df.avgs.out$review.cnt
@@ -203,21 +151,104 @@ names(df.avgs) <- 'cnt'
 plot4 <- g(dat,df.avgs, t='Funny Compliments',x.label='Means of Funny Compliments')
 
 suppressMessages(require(gridExtra))
-grid.arrange(plot2, plot3, plot4, ncol=2,nrow=2)
+grid.arrange(plot3, plot4, ncol=2,nrow=1)
 ```
 
-Using a Student's t-Test, it can be demonstrated that between each population, the population means indeed differ. And in each, case overall feedback is more positive for the joyous population.
-
-```{r,echo=F}
-t.test(as.numeric(df.joyous.out$feedback), as.numeric(df.miserables.out$feedback))
-t.test(as.numeric(df.joyous.out$hot), as.numeric(df.miserables.out$hot))
-t.test(as.numeric(df.joyous.out$funny), as.numeric(df.miserables.out$funny))
+```{r, echo=F,fig.height=3}
+grid.arrange(plot2, plot1, ncol=2,nrow=1)
 ```
 
-###Discussion
-One potential confounding variable that occurred to me is that it's possible the joyous just write more reviews than the miserables, and therefore receive more positive feedback by virture of being more active users. And though it is true (see below), both the joyous and miserables write more reviews than does the average population.
+As can be seen, the joyous enjoy more hot compliments, funny compliments and total feedback than the miserables, who receive fewer compliments and total feedback than even the average Yelp! reviewer. However, they write, on average, only slightly fewer reviews than the joyous do and well more than the average Yelp! reviewer does.
+
+Furthermore, Student's t-Tests confirm that the differences between each distribution's sampled means are indeed not equal to zero.
 
 ```{r, echo=F}
-grid.arrange(plot1, ncol=2,nrow=2)
+drv <- dbDriver("PostgreSQL")
+con <- dbConnect(drv, host="miley.cda5nmppsk8w.us-east-1.redshift.amazonaws.com", 
+                 port="5439", dbname="ncarbdw", user="admin")
+feedb <- dbGetQuery(con,"select 
+        u.useful_votes	+ u.funny_votes	+ u.cool_votes + u.fan_count	+ 
+        u.friend_count	+ u.hot_compliments	+ u.writer_compliments	+ u.photos_compliments	+ 
+        u.cool_compliments	+ u.funny_compliments	+ u.cute_compliments	+ u.plain_compliments feedback from brian.user u;")
 ```
+
+```{r}
+summary(feedb$feedback)
+```
+
+So given that the miserables and the joyous have such different total feedback scores, I decide to assign each Yelp! dataset reviewer into a feedback quadrant based on the summary above.
+
+####Natural Language Processing
+
+But which words are the most associated with pleasurable business categories? And which words occur most in the unpleasurable categories? To figure that out, I performed Natural Language Processing. And among the steps I performed were to clean the category combinations of punctuation, whitespace, numbers, stop words ('and', 'the', 'a', etc.) and make all their characters lower case. Stem words were then identified among all the category combinations and the number of times each of these stems appeared in a pleasurable category and an unpleasurable category was compared.
+
+```{r,echo=F}
+
+suppressMessages(library(tm))
+dest <- 'categories_nlp_docs'
+setwd('/home/ubuntu/coursera_capstone/')
+
+# create corpus
+docs <- Corpus(DirSource(dest,pattern="tsv"));rm(dest)
+# remove numbers
+docs <- tm_map(docs, removeNumbers)
+
+# remove stop words
+docs <- tm_map(docs, removeWords, stopwords("SMART"))
+
+# make all letters lower case
+docs <- tm_map(docs, content_transformer(tolower))
+# remove numbers
+docs <- tm_map(docs, removeNumbers)
+
+# remove stop words
+docs <- tm_map(docs, removeWords, stopwords("SMART"))
+
+# make all letters lower case
+docs <- tm_map(docs, content_transformer(tolower))
+library(SnowballC)
+docs <- tm_map(docs, removePunctuation)
+docs <- tm_map(docs, stripWhitespace)
+
+docs <- tm_map(docs, stemDocument)
+
+dtm <- DocumentTermMatrix(docs)
+freq <- colSums(as.matrix(dtm))
+ord <- order(freq)
+
+
+# most frequent terms
+#freq[tail(ord,n=25)]
+dtms <- removeSparseTerms(dtm, 0.3)
+
+# make a plot of freq terms with correlation above .6
+# plot(dtms,terms =findFreqTerms(dtms, lowfreq=50))
+```
+
+```{r,echo=F,results='hide'}
+df <- data.frame(inspect(TermDocumentMatrix(docs)))
+```
+
+Here are some examples of words more commonly found in **pleasurable** categories than **unpleasurable** categories. Not surprisingly, these words are somewhat affirming -- active, life, beauty.
+
+```{r,echo=F}
+suppressMessages(library(dplyr))
+df$diff <- df$joy.tsv - df$misery.tsv
+df$pct.diff <- df$diff/(df$joy.tsv + df$misery.tsv)
+df$names <- row.names(df)
+head(arrange(filter(df, misery.tsv > 0), desc(diff)))
+```
+
+It should be noted that to be considered among the **pleasure** categories, a category must include at least seven businesses and at least 30 reviews. The same is true for inclusion in the **unpleasurable** categories. And words more likely to appear in those can be found below:
+
+```{r,echo=F}
+head(arrange(filter(df, misery.tsv > 0), diff))
+```
+
+So, to finally see how the category stem words interplayed with the perception of a reviewer among his or her peers, created a document term matrix for each category combination and then merged that matrix with a data set of average star ratings for each category according to feedback quadrant.
+
+###Results
+
+
+###Discussion
 
