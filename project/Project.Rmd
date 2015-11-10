@@ -1,17 +1,17 @@
-##But Does Company Love Misery?
+##How Category Words and User Feedback Relate to Review Ratings
 
 ###Introduction
 There are categories of businesses in the [Yelp! dataset](http://www.yelp.com/dataset_challenge) that may very well transcend the quality of the businesses within them. On average, the businesses within these categories enjoy very high ratings from Yelp! reviewers. Nevertheless, there are those individuals who have assigned to buisinesses within one of these **pleasure** categories at least one review that is at least 1.5 stars lower than the category's average rating. These people will heretofore be known as the **the miserables**. The inverse is also true: there are those who have assigned at least one rating at least 1.5 stars higher than the average category rating for a business in the on-average lowest rated categories. They will be referred to as **the joyous**.
 
-My hypothesis is that **the joyous** are comprised of folks who receive more compliments from their peers, those being other Yelp! reviewers. And their counterparts, **the miserables** attract fewer compliments from other Yelp! reviewers. And that, furthermore, there is a correlation between how much positive feedback one receives and the likelihood he or she will enjoy a business in Yelp!.s
+My hypothesis is that **the joyous** are comprised of folks who receive more compliments from their peers, those being other Yelp! reviewers. And their counterparts, **the miserables** attract fewer compliments from other Yelp! reviewers. And that, furthermore, there is a correlation between how much positive feedback one receives and the likelihood he or she will enjoy a business in Yelp!, no matter how negative a business's category is found to be.
 
 ###Methods
 
 ####Preparing the data
 
-Due to the sheer size of the Yelp! dataset, it was helpful to first move all the data (user, business, review, etc.) into a PostgreSQL database. It made aggregating 1.6 million reviews and over 310,000 users much easier, as earlier attempts at merging and aggregating these data sets proved impractical.
+Due to the sheer size of the Yelp! dataset, it was helpful to first move all the data (user, business, review, etc.) into a PostgreSQL database. It made aggregating 1.6 million reviews and over 310,000 users much more practical.
 
-Because each business has multiple categories associated with them, I chose to concatenate all the categories for a business into one string, or category combination. And to find out which of these combinations are the most and least pleasurable, I only considered those category combinations with at least six businesses associated with them at least 30 reviews shared among their businesses.
+Because each business has multiple categories associated with them, I chose to concatenate all the categories for a business into one string, or **category combination*. And to find out which of these combinations are the most and least pleasurable, I only considered those category combinations with at least six businesses associated with them at least 30 reviews shared among their businesses.
 
 **Top 3 most pleasing category combinations**:
 
@@ -34,7 +34,7 @@ bottom10$category
 
 ####The Joyous vs. The Miserables
 
-Next I wanted to see if there is a difference in the amount of feedback the joyous and miserable receive. And to compare a normal distribution, I performed a sampling distribution of the sample means of hot compliments, funny compliments, total feedback (sum of compliment counts, friends and fans) and the number of reviews written for each of three populations -- the joyous, the miserables and the entire population of Yelp! reviewers. I took 2000 samples 100000 times.
+Next I wanted to see if there is a difference in the amount of feedback the joyous and miserable receive. And to compare a normal distribution, I performed a sampling distribution of the sample means of hot compliments, funny compliments, total feedback (sum of compliment counts, friends and fans) and the number of reviews written for each of three populations -- the joyous, the miserables and the entire population of Yelp! reviewers. I took 2000 samples 100000 times from each population.
 
 ```{r, eval=F}
 joyous.out <- replicate( 100000, mean( sample(joyous$funny_compliments, 2000) ) )
@@ -44,7 +44,7 @@ avgs.out <- replicate( 100000, mean( sample(avgs$funny_compliments, 2000) ) )
 
 The red droplines in the figures below denote the sampled mean for the joyous. Blue for the miserables. And green for the entire population of Yelp! reviewers.
 
-```{r,echo=F,fig.height=3}
+```{r,echo=F,fig.height=2}
 suppressMessages(library(ggplot2))
 suppressMessages(library(dplyr))
 library(RColorBrewer)
@@ -154,7 +154,7 @@ suppressMessages(require(gridExtra))
 grid.arrange(plot3, plot4, ncol=2,nrow=1)
 ```
 
-```{r, echo=F,fig.height=3}
+```{r, echo=F,fig.height=2}
 grid.arrange(plot2, plot1, ncol=2,nrow=1)
 ```
 
@@ -176,11 +176,11 @@ feedb <- dbGetQuery(con,"select
 summary(feedb$feedback)
 ```
 
-So given that the miserables and the joyous have such different total feedback scores, I decide to assign each Yelp! dataset reviewer into a feedback quadrant based on the summary above.
+So given that the miserables and the joyous have such different total feedback scores, I decide to assign each Yelp! dataset reviewer to a feedback quadrant based on the summary above. Quadrant 1 are those who have received between 0 and 2 items of total feedback whereas people in Quadrant 4 have received between 42 and 229400 items of total feedback.
 
 ####Natural Language Processing
 
-But which words are the most associated with pleasurable business categories? And which words occur most in the unpleasurable categories? To figure that out, I performed Natural Language Processing. And among the steps I performed were to clean the category combinations of punctuation, whitespace, numbers, stop words ('and', 'the', 'a', etc.) and make all their characters lower case. Stem words were then identified among all the category combinations and the number of times each of these stems appeared in a pleasurable category and an unpleasurable category was compared.
+But which words are the most associated with pleasurable business categories? And which words occur most in the unpleasurable categories? To figure that out, I performed Natural Language Processing (NLP). And among the steps I performed were to clean the category combinations of punctuation, whitespace, numbers, stop words ('and', 'the', 'a', etc.) and make all their characters lower case. Stem words were then identified among all the category combinations and the number of times each of these stems appeared in a pleasurable category and an unpleasurable category was compared.
 
 ```{r,echo=F}
 
@@ -239,16 +239,99 @@ df$names <- row.names(df)
 head(arrange(filter(df, misery.tsv > 0), desc(diff)))
 ```
 
-It should be noted that to be considered among the **pleasure** categories, a category must include at least seven businesses and at least 30 reviews. The same is true for inclusion in the **unpleasurable** categories. And words more likely to appear in those can be found below:
+Words more likely to appear in **unpleasurable** categories of businesses can be found below:
 
 ```{r,echo=F}
 head(arrange(filter(df, misery.tsv > 0), diff))
 ```
 
-So, to finally see how the category stem words interplayed with the perception of a reviewer among his or her peers, created a document term matrix for each category combination and then merged that matrix with a data set of average star ratings for each category according to feedback quadrant.
+So, to finally see how the category stem words interplayed with the perception of a reviewer among his or her peers, I created a document term matrix for each category combination and then merged that matrix with a data set of average star ratings for each category according to what feedback quadrant the reviewer falls in.
+
+####Linear Regression
+
+The natural choice seemed to be to take the most **pleasurable** category word **hair** and the least **restaurant** and see how they interact with **feedback quadrant** with regard to the average rating of a business.
+
+```{r, echo=F, fig.height = 3}
+suppressMessages(library(caret))
+df.dtm <- read.table("../dtm.csv",sep=',',header=T,stringsAsFactors = F)
+cats <- read.table('../cats.tsv',sep='\t',header=T, stringsAsFactors = F)
+df.dtm <- cbind(cats$categories, df.dtm[2:nrow(df.dtm),])
+names(df.dtm)[1]<-"categories"
+df.dtm$categories <- as.character(df.dtm$categories)
+df.dtm <- df.dtm[,-2]
+avg.stars <- read.table('../avg.stars.tsv',sep='\t',stringsAsFactors = F,header = T)
+df.stars <- inner_join(avg.stars,df.dtm,by='categories')
+
+rm(df.dtm);rm(avg.stars);rm(cats)
+
+set.seed(666)
+trainIndex <- createDataPartition(df.stars$avg_stars, p = .8, list=F)
+train <- df.stars[trainIndex,]
+test <- df.stars[-trainIndex,]
+
+fit <- lm(avg_stars ~ .,train[,c(2,3,5:ncol(train))])
+
+coefs <- data.frame(summary(fit)$coef)
+coefs$name <- row.names(coefs)
+names(coefs) <- c('estimate','se','t.val','p.val', 'name')
+prime.coefs <- arrange(filter(coefs, p.val<.05),p.val)
+
+train <- train[,colnames(train)%in%c('categories', 'avg_stars', prime.coefs$name)]
+test <- test[,colnames(test)%in%c('categories', 'avg_stars', prime.coefs$name)]
+
+fit2 <- lm(avg_stars ~ ., train[,2:ncol(train)])
+
+coefs <- data.frame(summary(fit2)$coef)
+coefs$name <- row.names(coefs)
+names(coefs) <- c('estimate','se','t.val','p.val', 'name')
+prime.coefs <- arrange(filter(coefs, p.val<.05),p.val)
+
+train <- train[,colnames(train)%in%c('categories', 'avg_stars', prime.coefs$name)]
+test <- test[,colnames(test)%in%c('categories', 'avg_stars', prime.coefs$name)]
+
+fit3 <- lm(avg_stars ~ ., train[,2:ncol(train)])
+
+coefs <- data.frame(summary(fit3)$coef)
+coefs$name <- row.names(coefs)
+names(coefs) <- c('estimate','se','t.val','p.val', 'name')
+prime.coefs <- arrange(filter(coefs, p.val<.05),p.val)
+
+train <- train[,colnames(train)%in%c('categories', 'avg_stars', prime.coefs$name)]
+test <- test[,colnames(test)%in%c('categories', 'avg_stars', prime.coefs$name)]
+
+fit4 <- lm(avg_stars ~ ., train[,2:ncol(train)])
+
+fit.hair.feedback_quadrant <- lm(avg_stars~ hair * factor(feedback_quadrant), df.stars)
+coef(summary(fit.hair.feedback_quadrant))[c(1,2,5,8),c(1,4)]
+fit.restaur.feedback_quadrant <- lm(avg_stars~ restaur * factor(feedback_quadrant), df.stars)
+coef(summary(fit.restaur.feedback_quadrant))[c(1,2,5,8),c(1,4)]
+
+
+plot(df.stars$hair, df.stars$avg_stars, type = "n", frame = FALSE, xlab="Mentions of 'hair' in business's category combination",ylab="Average Review's Star Rating", main="Average Rating Regressed by Occurrences of 'Hair'\nin business's category, interacting with Feedback Quadrant")
+abline(coef(fit.hair.feedback_quadrant)[1], coef(fit.hair.feedback_quadrant)[2], lwd = 3, col='blue')
+abline(coef(fit.hair.feedback_quadrant)[1] + coef(fit.hair.feedback_quadrant)[5], coef(fit.hair.feedback_quadrant)[2] + coef(fit.hair.feedback_quadrant)[8], lwd = 3, col='red')
+points(df.stars[df.stars$hair!=0,]$hair, df.stars[df.stars$hair!=0,]$avg_stars, pch = 21, col = "black", bg = "lightblue", cex = .7)
+points(df.stars[df.stars$hair==0,]$hair, jitter(df.stars[df.stars$hair==0,]$avg_stars, 14), pch = 21, col = "black", bg = "salmon", cex = .7)
+legend("topleft", inset = .05, lty=c(1,1), lwd=c(2.5,2.5), title = "Feedback Quadrant",legend= c("Lowest","Highest")
+       ,col = c('blue','red'), horiz=TRUE)
+```
+
+```{r, echo=F, fig.height=3}
+plot(df.stars$restaur, df.stars$avg_stars, type = "n", frame = FALSE, xlab="Mentions of 'restaurant' in business's category combination",ylab="Average Review's Star Rating")
+abline(coef(fit.restaur.feedback_quadrant)[1], coef(fit.restaur.feedback_quadrant)[2], lwd = 3, col='blue')
+abline(coef(fit.restaur.feedback_quadrant)[1] + coef(fit.restaur.feedback_quadrant)[5], coef(fit.restaur.feedback_quadrant)[2] + coef(fit.restaur.feedback_quadrant)[8], lwd = 3, col='red')
+points(df.stars[df.stars$restaur!=0,]$restaur, df.stars[df.stars$restaur!=0,]$avg_stars, pch = 21, col = "black", bg = "lightblue", cex = .7)
+points(df.stars[df.stars$restaur==0,]$restaur, jitter(df.stars[df.stars$restaur==0,]$avg_stars, 14), pch = 21, col = "black", bg = "salmon", cex = .7)
+title("Average Rating Regressed by Occurrences of 'Restaurant'\nin business's category, interacting with Feedback Quadrant")
+legend("topleft", inset = .05, lty=c(1,1), lwd=c(2.5,2.5), title = "Feedback Quadrant",legend= c("Lowest","Highest")
+       ,col = c('blue','red'), horiz=TRUE)
+
+```
 
 ###Results
-
+The results are somewhat surprising. Though the intercept for people in the fourth feedback quadrant is higher, as the number of occurences of either a very positive category word like 'hair' or a very negative category word such as 'restaurant', fourth quadrant people's **enjoyment of a business actually decreases**.
 
 ###Discussion
+
+I have to say, the number of times a word appears in the concatenation of categories describing a business seems a tad arbitrary. What I had hoped to establish was a combination of cateory words that was so strong that it could be proven that everyone would love any business within that category. Including those who were statistically less likely to enjoy pleasurable categories of businesses and services. I think I may have failed. Aside from finding that the number of times certain words, like 'Hair', were used to describe a business seemed to correlate stronly with on-average favorable reviews, I could not prove that people who are perceived positively by their peers are more likely to find happiness in commerce than are those who receive low feedback.
 
