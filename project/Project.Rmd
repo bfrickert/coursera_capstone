@@ -1,9 +1,9 @@
 ##How Category Words and User Feedback Relate to Review Ratings
 
 ###Introduction
-There are categories of businesses in the [Yelp! dataset](http://www.yelp.com/dataset_challenge) that may very well transcend the quality of the businesses within them. On average, the businesses within these categories enjoy very high ratings from Yelp! reviewers. Nevertheless, there are those individuals who have assigned to buisinesses within one of these **pleasure** categories at least one review that is at least 1.5 stars lower than the category's average rating. These people will heretofore be known as the **the miserables**. The inverse is also true: there are those who have assigned at least one rating at least 1.5 stars higher than the average category rating for a business in the on-average lowest rated categories. They will be referred to as **the joyous**.
+There are categories of businesses in the *[Yelp! dataset](http://www.yelp.com/dataset_challenge)* that may very well transcend the quality of the businesses within them. On average, the businesses within some categories enjoy very high ratings from Yelp! reviewers. Nevertheless, there are individuals who have assigned to businesses within one of these **pleasure categories** at least one review that is at least 1.5 stars lower than the category's average rating. These people will heretofore be known as the **the miserables**. The inverse is also true: there are those who have assigned at least one rating at least 1.5 stars higher than the average category rating for a business in the on-average lowest rated categories. They will be referred to as **the joyous**.
 
-My hypothesis is that **the joyous** are comprised of folks who receive more compliments from their peers, those being other Yelp! reviewers. And their counterparts, **the miserables** attract fewer compliments from other Yelp! reviewers. And that, furthermore, there is a correlation between how much positive feedback one receives and the likelihood he or she will enjoy a business in Yelp!, no matter how negative a business's category is found to be.
+My hypothesis is that **the joyous** are comprised of folks who receive more compliments from their peers, those being other Yelp! reviewers. And their counterparts, **the miserables** attract fewer compliments from other Yelp! reviewers. And that, furthermore, there is a correlation between how much positive feedback one receives and the likelihood he or she will enjoy a business in Yelp!, no matter how negative or positive a business's category is found to be.
 
 ###Methods
 
@@ -11,7 +11,7 @@ My hypothesis is that **the joyous** are comprised of folks who receive more com
 
 Due to the sheer size of the Yelp! dataset, it was helpful to first move all the data (user, business, review, etc.) into a PostgreSQL database. It made aggregating 1.6 million reviews and over 310,000 users much more practical.
 
-Because each business has multiple categories associated with them, I chose to concatenate all the categories for a business into one string, or **category combination*. And to find out which of these combinations are the most and least pleasurable, I only considered those category combinations with at least six businesses associated with them at least 30 reviews shared among their businesses.
+Because each business has multiple categories associated with them, I chose to concatenate all the categories for a business into one string, or **category combination**. And to find out which of these combinations are the most and least pleasurable, I only considered those category combinations with at least six businesses associated with them and at least 30 reviews shared among their businesses.
 
 **Top 3 most pleasing category combinations**:
 
@@ -32,9 +32,9 @@ top10$category
 bottom10$category
 ```
 
-####The Joyous vs. The Miserables
+####The Joyous vs. The Miserables vs. Statistical Inference
 
-Next I wanted to see if there is a difference in the amount of feedback the joyous and miserable receive. And to compare a normal distribution, I performed a sampling distribution of the sample means of hot compliments, funny compliments, total feedback (sum of compliment counts, friends and fans) and the number of reviews written for each of three populations -- the joyous, the miserables and the entire population of Yelp! reviewers. I took 2000 samples 100000 times from each population.
+Next I wanted to see if there is a difference in the feedback the joyous and miserable receive. I performed a sampling distribution of the sample means of hot compliments, funny compliments, total feedback (sum of compliment counts, friends and fans) and the number of reviews written for each of three populations -- the joyous, the miserables and the entire population of Yelp! reviewers. I took 2000 samples 100000 times from each population.
 
 ```{r, eval=F}
 joyous.out <- replicate( 100000, mean( sample(joyous$funny_compliments, 2000) ) )
@@ -42,7 +42,7 @@ miserables.out <- replicate( 100000, mean( sample(miserables$funny_compliments, 
 avgs.out <- replicate( 100000, mean( sample(avgs$funny_compliments, 2000) ) )
 ```
 
-The red droplines in the figures below denote the sampled mean for the joyous. Blue for the miserables. And green for the entire population of Yelp! reviewers.
+The <span style="color:red; font-family:Georgia; font-size:1em;">red</span> droplines in the figures below denote the sampled mean for the joyous. <span style="color:blue; font-family:Georgia; font-size:1em;">Blue</span> for the miserables. And <span style="color:green; font-family:Georgia; font-size:1em;">green</span> for the entire population of Yelp! reviewers.
 
 ```{r,echo=F,fig.height=2}
 suppressMessages(library(ggplot2))
@@ -131,7 +131,7 @@ names(dat) <- c('type','cnt')
 df.avgs <- data.frame(as.numeric(avgs.out), stringsAsFactors = F)
 names(df.avgs) <- 'cnt'
 
-plot3 <- g(dat,df.avgs,t='Hot Compliments',x.label='Means of Hot Compliments')
+plot3 <- g(dat,df.avgs,t='Compliments: Hot',x.label='Means of Hot Compliments')
 
 #funny
 joyous.out <- df.joyous.out$funny
@@ -148,7 +148,7 @@ names(dat) <- c('type','cnt')
 df.avgs <- data.frame(as.numeric(avgs.out), stringsAsFactors = F)
 names(df.avgs) <- 'cnt'
 
-plot4 <- g(dat,df.avgs, t='Funny Compliments',x.label='Means of Funny Compliments')
+plot4 <- g(dat,df.avgs, t='Compliments: Funny',x.label='Means of Funny Compliments')
 
 suppressMessages(require(gridExtra))
 grid.arrange(plot3, plot4, ncol=2,nrow=1)
@@ -163,6 +163,10 @@ As can be seen, the joyous enjoy more hot compliments, funny compliments and tot
 Furthermore, Student's t-Tests confirm that the differences between each distribution's sampled means are indeed not equal to zero.
 
 ```{r, echo=F}
+#t.tests
+```
+
+```{r, echo=F}
 drv <- dbDriver("PostgreSQL")
 con <- dbConnect(drv, host="miley.cda5nmppsk8w.us-east-1.redshift.amazonaws.com", 
                  port="5439", dbname="ncarbdw", user="admin")
@@ -172,11 +176,11 @@ feedb <- dbGetQuery(con,"select
         u.cool_compliments	+ u.funny_compliments	+ u.cute_compliments	+ u.plain_compliments feedback from brian.user u;")
 ```
 
+So given that the miserables and the joyous have such different total feedback scores, I decide to assign each Yelp! dataset reviewer to a feedback group based on the summary above. group 1 are those who have received between 0 and 2 items of total feedback whereas people in group 4 have received between 42 and 229400 items of total feedback.
+
 ```{r}
 summary(feedb$feedback)
 ```
-
-So given that the miserables and the joyous have such different total feedback scores, I decide to assign each Yelp! dataset reviewer to a feedback quadrant based on the summary above. Quadrant 1 are those who have received between 0 and 2 items of total feedback whereas people in Quadrant 4 have received between 42 and 229400 items of total feedback.
 
 ####Natural Language Processing
 
@@ -236,22 +240,25 @@ suppressMessages(library(dplyr))
 df$diff <- df$joy.tsv - df$misery.tsv
 df$pct.diff <- df$diff/(df$joy.tsv + df$misery.tsv)
 df$names <- row.names(df)
-head(arrange(filter(df, misery.tsv > 0), desc(diff)))
+names(df)[1:2] <- c('joy', 'misery')
+head(arrange(filter(df, misery > 0), desc(diff)))
 ```
 
 Words more likely to appear in **unpleasurable** categories of businesses can be found below:
 
 ```{r,echo=F}
-head(arrange(filter(df, misery.tsv > 0), diff))
+head(arrange(filter(df, misery > 0), diff))
 ```
 
-So, to finally see how the category stem words interplayed with the perception of a reviewer among his or her peers, I created a document term matrix for each category combination and then merged that matrix with a data set of average star ratings for each category according to what feedback quadrant the reviewer falls in.
+So, to finally see how the category stem words interplayed with the perception of a reviewer among his or her peers, I created a term matrix for each category combination and then merged that matrix with a data set of average star ratings for each category according to what feedback group the reviewer falls in.
 
 ####Linear Regression
 
-The natural choice seemed to be to take the most **pleasurable** category word **hair** and the least **restaurant** and see how they interact with **feedback quadrant** with regard to the average rating of a business.
+The natural choice seemed to be to take the most **pleasurable** category word, **hair**, and the least, **restaurant**, and see how interacting with **feedback group** related to the average rating of a business.
 
-```{r, echo=F, fig.height = 3}
+###Results
+
+```{r, echo=F}
 suppressMessages(library(caret))
 df.dtm <- read.table("../dtm.csv",sep=',',header=T,stringsAsFactors = F)
 cats <- read.table('../cats.tsv',sep='\t',header=T, stringsAsFactors = F)
@@ -301,37 +308,55 @@ test <- test[,colnames(test)%in%c('categories', 'avg_stars', prime.coefs$name)]
 
 fit4 <- lm(avg_stars ~ ., train[,2:ncol(train)])
 
-fit.hair.feedback_quadrant <- lm(avg_stars~ hair * factor(feedback_quadrant), df.stars)
-coef(summary(fit.hair.feedback_quadrant))[c(1,2,5,8),c(1,4)]
-fit.restaur.feedback_quadrant <- lm(avg_stars~ restaur * factor(feedback_quadrant), df.stars)
-coef(summary(fit.restaur.feedback_quadrant))[c(1,2,5,8),c(1,4)]
+fit.hair.feedback_group <- lm(avg_stars~ hair * factor(feedback_group), df.stars)
+coef(summary(fit.hair.feedback_group))[c(1,2,5,8),c(1,4)]
 
-
-plot(df.stars$hair, df.stars$avg_stars, type = "n", frame = FALSE, xlab="Mentions of 'hair' in business's category combination",ylab="Average Review's Star Rating", main="Average Rating Regressed by Occurrences of 'Hair'\nin business's category, interacting with Feedback Quadrant")
-abline(coef(fit.hair.feedback_quadrant)[1], coef(fit.hair.feedback_quadrant)[2], lwd = 3, col='blue')
-abline(coef(fit.hair.feedback_quadrant)[1] + coef(fit.hair.feedback_quadrant)[5], coef(fit.hair.feedback_quadrant)[2] + coef(fit.hair.feedback_quadrant)[8], lwd = 3, col='red')
-points(df.stars[df.stars$hair!=0,]$hair, df.stars[df.stars$hair!=0,]$avg_stars, pch = 21, col = "black", bg = "lightblue", cex = .7)
-points(df.stars[df.stars$hair==0,]$hair, jitter(df.stars[df.stars$hair==0,]$avg_stars, 14), pch = 21, col = "black", bg = "salmon", cex = .7)
-legend("topleft", inset = .05, lty=c(1,1), lwd=c(2.5,2.5), title = "Feedback Quadrant",legend= c("Lowest","Highest")
-       ,col = c('blue','red'), horiz=TRUE)
 ```
+
+So the results of the linear regression were surprising. Basically what they tell us is that if a group of people in the highest feedback group were to go to a place that is not in a **hair** category (zero mentions of hair in the business category combination), the model expects that on average they would give the business a rating of **`r  round(coef(fit.hair.feedback_group)[1] + coef(fit.hair.feedback_group)[5], 3) `**. A group from feedback group 1 would on average rate the business a **`r  round(coef(fit.hair.feedback_group)[1], 3) `**. But what's surprising is that were these same two groups to enter a **hair** business, with every mention of the word **hair** in the category combination for this business, the model predicts the average rating for the group 4 people will rise **`r  abs(round(coef(fit.hair.feedback_group)[8], 3)) `** stars **LESS** than the group 1 people. Please refer to the figure below.
 
 ```{r, echo=F, fig.height=3}
+
+plot(df.stars$hair, df.stars$avg_stars, type = "n", frame = FALSE, xlab="Mentions of 'hair' in business's category combination",ylab="Average Review's Star Rating", main="Average Rating Regressed by Occurrences of 'hair'\nin business's category, interacting with Feedback group")
+abline(coef(fit.hair.feedback_group)[1], coef(fit.hair.feedback_group)[2], lwd = 3, col='blue')
+abline(coef(fit.hair.feedback_group)[1] + coef(fit.hair.feedback_group)[5], coef(fit.hair.feedback_group)[2] + coef(fit.hair.feedback_group)[8], lwd = 3, col='red')
+points(df.stars[df.stars$hair!=0,]$hair, df.stars[df.stars$hair!=0,]$avg_stars, pch = 21, col = "black", bg = "lightblue", cex = .7)
+points(df.stars[df.stars$hair==0,]$hair, jitter(df.stars[df.stars$hair==0,]$avg_stars, 14), pch = 21, col = "black", bg = "salmon", cex = .7)
+legend("bottomright", inset = .05, lty=c(1,1), lwd=c(2.5,2.5), title = "Feedback group",legend= c("Lowest","Highest")
+       ,col = c('blue','red'), horiz=TRUE)
+```
+
+```{r, echo=F, results="hide"}
+fit.restaur.feedback_group <- lm(avg_stars~ restaur * factor(feedback_group), df.stars)
+coef(summary(fit.restaur.feedback_group))[c(1,2,5,8),c(1,4)]
+```
+
+And it's even worse for the most **unpleasurable** business category word **restaurant**.
+
+```{r, echo=F, fig.height=3, results='hide'}
 plot(df.stars$restaur, df.stars$avg_stars, type = "n", frame = FALSE, xlab="Mentions of 'restaurant' in business's category combination",ylab="Average Review's Star Rating")
-abline(coef(fit.restaur.feedback_quadrant)[1], coef(fit.restaur.feedback_quadrant)[2], lwd = 3, col='blue')
-abline(coef(fit.restaur.feedback_quadrant)[1] + coef(fit.restaur.feedback_quadrant)[5], coef(fit.restaur.feedback_quadrant)[2] + coef(fit.restaur.feedback_quadrant)[8], lwd = 3, col='red')
+abline(coef(fit.restaur.feedback_group)[1], coef(fit.restaur.feedback_group)[2], lwd = 3, col='blue')
+abline(coef(fit.restaur.feedback_group)[1] + coef(fit.restaur.feedback_group)[5], coef(fit.restaur.feedback_group)[2] + coef(fit.restaur.feedback_group)[8], lwd = 3, col='red')
 points(df.stars[df.stars$restaur!=0,]$restaur, df.stars[df.stars$restaur!=0,]$avg_stars, pch = 21, col = "black", bg = "lightblue", cex = .7)
 points(df.stars[df.stars$restaur==0,]$restaur, jitter(df.stars[df.stars$restaur==0,]$avg_stars, 14), pch = 21, col = "black", bg = "salmon", cex = .7)
-title("Average Rating Regressed by Occurrences of 'Restaurant'\nin business's category, interacting with Feedback Quadrant")
-legend("topleft", inset = .05, lty=c(1,1), lwd=c(2.5,2.5), title = "Feedback Quadrant",legend= c("Lowest","Highest")
+title("Average Rating Regressed by Occurrences of 'Restaurant'\nin business's category, interacting with Feedback group")
+legend("topleft", inset = .05, lty=c(1,1), lwd=c(2.5,2.5), title = "Feedback group",legend= c("Lowest","Highest")
        ,col = c('blue','red'), horiz=TRUE)
 
 ```
 
-###Results
-The results are somewhat surprising. Though the intercept for people in the fourth feedback quadrant is higher, as the number of occurences of either a very positive category word like 'hair' or a very negative category word such as 'restaurant', fourth quadrant people's **enjoyment of a business actually decreases**.
+For every instance of the word **restaurant** in a business category, the average star rating or a person in group 4 **actually decreases by `r abs(round(coef(fit.restaur.feedback_group)[2] + coef(fit.restaur.feedback_group)[8], 3)) ` stars**.
+
+This is not what I was expecting.
 
 ###Discussion
 
-I have to say, the number of times a word appears in the concatenation of categories describing a business seems a tad arbitrary. What I had hoped to establish was a combination of cateory words that was so strong that it could be proven that everyone would love any business within that category. Including those who were statistically less likely to enjoy pleasurable categories of businesses and services. I think I may have failed. Aside from finding that the number of times certain words, like 'Hair', were used to describe a business seemed to correlate stronly with on-average favorable reviews, I could not prove that people who are perceived positively by their peers are more likely to find happiness in commerce than are those who receive low feedback.
+When I initially began this assingment, my goal was to create a model that might spit out a combination of categories statistically shown to elicit the highest user ratings in the hopes that that category combination would be something absurd like **Bail Bonds | Event Planning | Archery Wholesaler**. When that seemed beyond my reach, I decided to investigate what kind of people disliked businesses in the **pleasure** categories to show that they are miserable no matter what. And that people who get a lot of positive attention -- the hot, the funny, the useful -- will have a good time no matter where they go, since people may very well fawn on them -- for their looks, sense of humor and usefulness.
 
+**Where I went wrong in all this**: extrapolating that a user's feedback group would denote one's membership in the joyous or the miserables clan was a mistake.  if you look at the histograms below you will see that **FAR AND AWAY**, the mode of both populations for total feedback is ZERO. So, clearly, feedback group 1 actually had more of the joyous than it did miserables. So the delineation was flawed. **Miserably so**.
+
+```{r, echo=F, fig.height=3}
+par(mfrow=c(1,2))
+hist(joyous.total$feedback,breaks=100, col='red', xlab='Total Feedback',main='Frequencies among the Joyous')
+hist(miserables.total$feedback,breaks=100, col='blue', xlab='Total Feedback',main='Frequencies among the Miserables')
+```
