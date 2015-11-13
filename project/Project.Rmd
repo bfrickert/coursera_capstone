@@ -1,18 +1,24 @@
-#Is There Just No Pleasing Some People?:
+---
+title: "Is There Just No Pleasing Some People?"
+author: Brian Frickert
+output: pdf_document
+fontsize: 5pt
+---
+
 ##Categories, Feedback and How They Relate to Pleasure
 
 ###Introduction
-There are categories of businesses in the *[Yelp! dataset](http://www.yelp.com/dataset_challenge)* that may very well transcend the quality of the businesses within them. The businesses within some categories enjoy, on average, very high ratings from *Yelp!* reviewers. Nevertheless, there are individuals who have assigned to businesses within one of these **pleasuring categories** at least one review that is at least 1.5 stars lower than the category's average rating. These people will heretofore be known as the **the miserables**. The inverse is also true: there are those who have assigned at least one rating at least 1.5 stars higher than the average category rating for a business in an **under-pleasuring** category. They will be referred to as **the joyous**.
+There are categories of businesses in the *[Yelp! dataset](http://www.yelp.com/dataset_challenge)* that may very well transcend the quality of the businesses within them. These are categories that people just love. The businesses within them enjoy, on average, very high ratings from *Yelp!* reviewers. Nevertheless, there are individuals who have assigned to businesses within one of these **pleasuring categories** at least one review that is at least 1.5 stars lower than the category's average rating. These people will heretofore be known as the **the miserables**. The inverse is also true: there are those who have assigned at least one rating at least 1.5 stars higher than the average category rating for a business in an **under-pleasuring** category. They will be referred to as **the joyous**.
 
-My hypothesis is that **the joyous** are comprised of folks who receive more compliments from their peers, those being other *Yelp!* reviewers. And their counterparts, **the miserables** attract fewer compliments from other *Yelp!* reviewers. And that, furthermore, there is a correlation between how much positive feedback one receives and the likelihood he or she will enjoy a business in *Yelp!*, no matter how negative or positive a business's category is found to be.
+My hypothesis is that **the joyous** are comprised of folks who receive more compliments from their *Yelp!* peers. These people are perceived as more attractive, funnier and more useful than their counterparts, **the miserables**. Furthermore, I think there may well be a correlation between how much feedback one receives and the likelihood he or she **will or will not find pleasure** at a business, no matter how **pleasuring** or **under-pleasuring** a business's category is.
 
 ###Methods
 
-Due to the sheer size of the *Yelp!* dataset, it was helpful to first move all the data (user, business, review, etc.) into a PostgreSQL database. It made aggregating 1.6 million reviews and over 310,000 users much more practical.
+The *Yelp!* dataset is big. Aggregating 1.6 million reviews and over 310,000 users proved impractical using RStudio alone. It wasn't long before I loaded the entire data set into a PostgreSQL database; thus, allowing me to select, join, filter and aggregate the data before loading smaller, more manageable subsets into my machine's memory.
 
 ####Preparing the data
 
-Because each business has multiple categories associated with them, I chose to concatenate all the categories for a business into one string, or **category combination**. And to find out which of these combinations are the **most and least pleasuring**, I only considered those category combinations with at least six businesses associated with them and at least 30 reviews shared among their businesses.
+Because each business has multiple categories associated with it, I chose to concatenate all the categories for a business into one string, or **category combination**. I only considered those category combinations with **at least six businesses associated with them and at least 30 reviews shared among their businesses**. Please refer to *Figure 1* for a list of the **top 3 most and least pleasuring** category combinations.
 
 ```{r,echo=F, fig.height=1}
 suppressMessages(library(RPostgreSQL))
@@ -27,9 +33,9 @@ names(bottom10) <- c('category')
 
 ####The Joyous vs. The Miserables vs. Statistical Inference
 
-Next I wanted to see if there is a difference in the feedback **the joyous** and **the miserables** receive. I performed a sampling distribution of the sample means of hot compliments, funny compliments, total feedback (sum of compliment counts, friends and fans) and the number of reviews written for each of three populations -- the joyous, the miserables and the entire population of *Yelp!* reviewers. I took 2000 samples 100000 times from each population.
+Next I wanted to see who rated businesses in the **pleasuring categories** poorly and who rated **under-pleasuring categories** highly -- **the joyous** and **the miserables**, respectively. Upon isolating these populations, I compared the feedback these two groups receive from their fellow *Yelpers* by sampling each population's distribution of sample means of hot compliments, funny compliments, total feedback (sum of compliment counts, friends and fans) and number of reviews written. I did the same thing for the entire population of *Yelp!* reviewers as well. **2,000** samples were taken **100,000** times from each population for each variable.
 
-As can be seen in *Figure 3*, **the joyous** enjoy more hot compliments, funny compliments and total feedback than **the miserables**, who receive fewer compliments and total feedback than even the average *Yelp!* reviewer. However, they write, on average, only slightly fewer reviews than the joyous do and well more than the average *Yelp!* reviewer does.
+As can be seen in *Figure 2*, **the joyous**, on average, enjoy far more hot compliments, funny compliments and total feedback (sum of compliments and counts of fans and friends) than **the miserables**, who receive fewer compliments and total feedback than even the average *Yelp!* reviewer. However, they write, on average, only slightly fewer reviews than **the joyous** do and well more than the average *Yelper* does.
 
 ```{r, echo=F}
 drv <- dbDriver("PostgreSQL")
@@ -41,15 +47,15 @@ feedb <- dbGetQuery(con,"select
         u.cool_compliments	+ u.funny_compliments	+ u.cute_compliments	+ u.plain_compliments feedback from brian.user u;")
 ```
 
-So given that **the joyous** and **the miserables** differ so much in terms of how they are perceived by the *Yelp!* community, I decide to assign each *Yelp!* dataset reviewer to a **feedback group** based on the summary below. **Group 1** reviewers are those who have received between 0 and 2 items of total feedback; whereas, people in **Group 4** have received between 42 and 229400 items of total feedback. Again, the hypothesis here, as extrapolated from the discovery of how **the joyous** are complimented so much more, is that the **Group 4** people will review businesses in **pleasuring** and **under-pleasuring** categories better than their **Group 1** counterparts.
+So given that **the joyous** and **the miserables** differ so much in terms of how they are perceived by the *Yelp!* community, I decided to assign each *Yelper* a **feedback group** (**1 through 4**) based on the summary below. **Group 1** reviewers are those who have received between **0 and 2** items of total feedback, **Group 2** have received between **3 and 10**, and so on. Again, the hypothesis here, as extrapolated from the discovery of how **the joyous** are complimented so much more, is that the **Group 4** people, those who have between **42 and 229,400** items of positive feedback, will review businesses in **pleasuring** and **under-pleasuring** categories better than their **Group 1** counterparts, with the added hypothesis that perhaps **Group 1** people hate everything.
 
-```{r}
+```{r, echo=F}
 summary(feedb$feedback)
 ```
 
 ####Natural Language Processing
 
-But which words are the most associated with **pleasuring business categories**? And which words occur most in the **unpleasuring categories**? Natural Language Processing (NLP) was the way to find out. This required cleaning the **category combinations** of punctuation, whitespace, numbers, stop words ('and', 'the', 'a', etc.) and making all their characters lower case. Stem words were then identified among all the category combinations and the number of times each of these stems appeared in a both **pleasuring** category and **under-pleasuring** categories was tallied and compared. See *Figures 3* and *4*.
+Back to the categories. Which words are most associated with **pleasuring categories**? And which words occur most in the **under-pleasuring categories**? Natural Language Processing (NLP) was the way to find out. This required cleaning the **category combinations** of punctuation, whitespace, numbers, stop words ('and', 'the', 'a', etc.) and making all their characters lower case. Stem words were then identified among all the category combinations and the number of times each of these stems appeared in both **pleasuring** and **under-pleasuring** categories was tallied and compared. See *Figures 3* and *4*.
 
 ```{r,echo=F}
 
@@ -106,14 +112,15 @@ df$names <- row.names(df)
 names(df)[1:2] <- c('joy', 'misery')
 ```
 
-So, to finally see how the category stem words interplayed with the perception of a reviewer among his or her peers, I created a term matrix for each category combination and then merged that matrix with a data set of average star ratings for each category according to what feedback group the reviewer falls in.
+So, to finally see how the category stem words interplayed with the perception of a reviewer among his or her peers, I created a term matrix for each category combination and then merged that matrix with a data set of average star ratings for each **category combination** according to what feedback group the reviewer falls in (**1**, **2**, **3** or **4**).
 
 ####Linear Regression
 
-The natural choice seemed to be to take the most **pleasuring** category word, *hair*, and the most **under-pleauring**, *restaurant*, and see how interacting with **feedback group** related to the average rating of a business. Please kindly refer to *Figure 5*.
+The natural choice seemed to be taking the most **pleasuring** category word, *hair*, and the most **under-pleauring**, *restaurant*, and see how interacting with **feedback group** related to the average rating of a business, as naturally the average rating reflects how much pleasure the reviewer in that **feedback group** experienced. **It's the moment of truth!** Please kindly refer to *Figure 5*.
 
 ###Results
 
+####Figure 1<br />
 **Top 3 most pleasing category combinations**:
 
 ```{r,echo=F}
@@ -126,6 +133,7 @@ top10$category
 bottom10$category
 ```
 
+####Figure 2
 The <span style="color:red; font-family:Georgia; font-size:1em;">red</span> droplines in the figures below denote the sampled mean for **the joyous**. <span style="color:blue; font-family:Georgia; font-size:1em;">Blue</span> for **the miserables**. And <span style="color:green; font-family:Georgia; font-size:1em;">green</span> for the entire population of *Yelp!* reviewers.
 
 ```{r,echo=F,fig.height=2}
@@ -248,11 +256,14 @@ Furthermore, Student's t-Tests confirm that the differences between each distrib
 #t.tests
 ```
 
+####Figure 3
 Here are some examples of words more commonly found in **pleasuring** categories than **under-pleasuring** categories. Not surprisingly, these words are somewhat affirming -- active, life, beauty.
 
 ```{r, echo=F}
 head(arrange(filter(df, misery > 0), desc(diff)))
 ```
+
+####Figure 4
 
 Words more likely to appear in **under-pleasuring** categories of businesses can be found below:
 
@@ -260,10 +271,8 @@ Words more likely to appear in **under-pleasuring** categories of businesses can
 head(arrange(filter(df, misery > 0), diff))
 ```
 
-
-
-
-
+####Figure 5<br />
+Note: **Groups 2 and 3** were included in the model, but for brevity, I've only displayed the intercepts and slopes for **Groups 1 and 4**. *Hair*, in the model below, refers to the number of times the word *hair* appears in a **category combination**.
 
 ```{r, echo=F}
 suppressMessages(library(caret))
@@ -322,11 +331,14 @@ coef(summary(fit.hair.feedback_group))[c(1,2,5,8),c(1,4)]
 
 ```
 
-So the results of the linear regression were surprising. Basically what they tell us is that if a group of people in the highest feedback group were to go to a place that is not in a **hair** category (zero mentions of hair in the business category combination), the model expects that on average they would give the business a rating of **`r  round(coef(fit.hair.feedback_group)[1] + coef(fit.hair.feedback_group)[5], 3) `**. A group from feedback group 1 would on average rate the business a **`r  round(coef(fit.hair.feedback_group)[1], 3) `**. But what's surprising is that were these same two groups to enter a **hair** business, with every mention of the word **hair** in the category combination for this business, the model predicts the average rating for the group 4 people will rise **`r  abs(round(coef(fit.hair.feedback_group)[8], 3)) `** stars **LESS** than the group 1 people. Please refer to the figure below.
+So the results of the linear regression were surprising. Basically what they tell us is that if a group of people in **Feedback Group 4** were to go to a place that is not in a **hair** category (zero mentions of hair in the business **category combination**), the model expects that, on average, they would give the business a rating of **`r  round(coef(fit.hair.feedback_group)[1] + coef(fit.hair.feedback_group)[5], 3) `**. A group from feedback **Group 1** would, on average, rate the business a **`r  round(coef(fit.hair.feedback_group)[1], 3) `**. But what's surprising is that were these same two groups to enter a **hair** business, with every occurrence of the word **hair** in the category combination for this business, the model predicts the average rating for the **Group 4** people will rise **`r  abs(round(coef(fit.hair.feedback_group)[8], 3)) `** stars **LESS** than the **Group 1** people. Please refer to *Figure 6*.
+
+####Figure 6
+**Group 4** people's pleasure increases less with each occurrence of *hair* than does **Group 1** people's pleasure.
 
 ```{r, echo=F, fig.height=3}
 
-plot(df.stars$hair, df.stars$avg_stars, type = "n", frame = FALSE, xlab="Mentions of 'hair' in business's category combination",ylab="Average Review's Star Rating", main="Average Rating Regressed by Occurrences of 'hair'\nin business's category, interacting with Feedback group")
+plot(df.stars$hair, df.stars$avg_stars, type = "n", frame = FALSE, xlab="Occurrences of 'hair' in business's category combination",ylab="Average Review's Star Rating", main="Average Rating Regressed by Occurrences of 'hair'\nin business's category, interacting with Feedback group")
 abline(coef(fit.hair.feedback_group)[1], coef(fit.hair.feedback_group)[2], lwd = 3, col='blue')
 abline(coef(fit.hair.feedback_group)[1] + coef(fit.hair.feedback_group)[5], coef(fit.hair.feedback_group)[2] + coef(fit.hair.feedback_group)[8], lwd = 3, col='red')
 points(df.stars[df.stars$hair!=0,]$hair, df.stars[df.stars$hair!=0,]$avg_stars, pch = 21, col = "black", bg = "lightblue", cex = .7)
@@ -340,7 +352,8 @@ fit.restaur.feedback_group <- lm(avg_stars~ restaur * feedback_group, df.stars)
 coef(summary(fit.restaur.feedback_group))[c(1,2,5,8),c(1,4)]
 ```
 
-And it's even worse for the most **unpleasurable** business category word **restaurant**.
+####Figure 7
+And it's even worse for the most **under-pleasuring** business category word **restaurant**.
 
 ```{r, echo=F, fig.height=3, results='hide'}
 plot(df.stars$restaur, df.stars$avg_stars, type = "n", frame = FALSE, xlab="Mentions of 'restaurant' in business's category combination",ylab="Average Review's Star Rating")
@@ -354,18 +367,21 @@ legend("bottomright", inset = .05, lty=c(1,1), lwd=c(2.5,2.5), title = "Feedback
 
 ```
 
-For every instance of the word **restaurant** in a business category, the average star rating or a person in group 4 **actually decreases by `r abs(round(coef(fit.restaur.feedback_group)[2] + coef(fit.restaur.feedback_group)[8], 3)) ` stars**.
+For every instance of the word **restaurant** in a business category, the average star rating for a person in **Group 4** actually **DECREASES by `r abs(round(coef(fit.restaur.feedback_group)[2] + coef(fit.restaur.feedback_group)[8], 3)) ` stars**.
 
 This is not what I was expecting.
 
 ###Discussion
 
-When I initially began this project, my goal was to create a model that might spit out a combination of categories statistically shown to elicit the highest user ratings in the hopes that that category combination would be something absurd like **Bail Bonds | Event Planning | Archery Wholesaler**. When that seemed beyond my reach, I decided to investigate what kind of people disliked businesses in the **pleasuring** categories to show that they are miserable no matter what. And that people who get a lot of positive attention -- the hot, the funny, the useful -- will have a good time no matter where they go, since people may very well fawn on them -- for their looks, sense of humor and usefulness.
+When I initially began this project, my goal was to create a model that might spit out a combination of categories statistically shown to elicit the highest user ratings, in the hopes that that category combination would be something absurd like **Bail Bonds | Event Planning | Archery Wholesaler**. When that seemed beyond my reach, I decided to investigate what kind of people disliked businesses in **pleasuring** categories in order to show that they are miserable no matter what. And that people who get a lot of positive attention -- the hot, the funny, the useful -- will have a good time no matter where they go, since people may very well fawn on them -- for their looks, sense of humor and usefulness.
 
-**Where I went wrong in all this**: extrapolating that a user's feedback group would denote one's membership in the joyous or the miserables clan was a mistake.  if you look at the histograms below you will see that **FAR AND AWAY**, the mode of both populations for total feedback is ZERO. So, clearly, feedback **Group 1** actually had more of the joyous than it did **miserables**. So the delineation was flawed. **Miserably so**.
+**Where I went wrong in all this**: extrapolating that a user's feedback group would denote one's membership in the joyous or the miserables clan was a mistake. If you look at the histograms in *Figure 8* you will see that **FAR AND AWAY**, the mode of both populations for total feedback is **ZERO**. So, clearly, feedback **Group 1** actually had more of the joyous than it did **miserables**. Therefore, the delineation was flawed. Perhaps even **miserably so**.
+
+####Figure 8
+Histograms revealing the zero for the mode of total feedback for **the joyous** and **the miserables**. 
 
 ```{r, echo=F, fig.height=3}
 par(mfrow=c(1,2))
-hist(joyous.total$feedback,breaks=100, col='red', xlab='Total Feedback',main='Frequencies among the Joyous')
-hist(miserables.total$feedback,breaks=100, col='blue', xlab='Total Feedback',main='Frequencies among the Miserables')
+hist(joyous.total$feedback,breaks=100, col='red', xlab='Total Feedback',main='Frequencies among\nthe Joyous')
+hist(miserables.total$feedback,breaks=100, col='blue', xlab='Total Feedback',main='Frequencies among\nthe Miserables')
 ```
