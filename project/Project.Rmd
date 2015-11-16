@@ -36,7 +36,7 @@ suppressMessages(dbDisconnect(con))
 
 ####The Joyous vs. The Miserables vs. Statistical Inference
 
-Next I wanted to see who rated businesses in the **pleasuring categories** poorly and who rated **under-pleasuring categories** highly -- **the joyous** and **the miserables**, respectively. Upon isolating these populations, I compared the feedback these two groups receive from their fellow *Yelpers* by sampling each population's distribution of sample means of hot compliments, funny compliments, total feedback (sum of compliment counts, friends and fans) and number of reviews written. I did the same thing for the entire population of *Yelp!* reviewers as well. **2,000** samples were taken **100,000** times from each population for each variable.
+Next I wanted to see who rated businesses in the **pleasuring categories** poorly and who rated **under-pleasuring categories** highly -- **the miserables** and **the joyous**, respectively. Upon isolating these populations, I compared the feedback these two groups receive from their fellow *Yelpers* by sampling each population's distribution of sample means of hot compliments, funny compliments, total feedback (sum of compliment counts, friends and fans) and number of reviews written. I did the same thing for the entire population of *Yelp!* reviewers as well. **2,000** samples were taken **100,000** times from each population for each variable.
 
 As can be seen in *Figure 2*, **the joyous**, on average, enjoy far more hot compliments, funny compliments and total feedback (sum of compliments and counts of fans and friends) than **the miserables**, who receive fewer compliments and total feedback than even the average *Yelp!* reviewer. However, they write, on average, only slightly fewer reviews than **the joyous** do and well more than the average *Yelper* does.
 
@@ -51,7 +51,7 @@ feedb <- dbGetQuery(con,"select
 dbDisconnect(con)
 ```
 
-So given that **the joyous** and **the miserables** differ so much in terms of how they are perceived by the *Yelp!* community, I decided to assign each *Yelper* a **feedback group** (**1 through 4**) based on the summary below. **Group 1** reviewers are those who have received between **0 and 2** items of total feedback, **Group 2** have received between **3 and 10**, and so on. Again, the hypothesis here, as extrapolated from the discovery of how **the joyous** are complimented so much more, is that the **Group 4** people, those who have between **42 and 229,400** items of positive feedback, will review businesses in **pleasuring** and **under-pleasuring** categories better than their **Group 1** counterparts, with the added hypothesis that perhaps **Group 1** people hate everything.
+So given that **the joyous** and **the miserables** differ so much in terms of how they are perceived by the *Yelp!* community, I decided to assign each *Yelper* a **feedback group** (**1 through 4**) based on the summary below. **Group 1** reviewers are those who have received between **0 and 2** items of total feedback, **Group 2** have received between **3 and 10**, and so on. Again, the hypothesis here, as extrapolated from the discovery of how **the joyous** are complimented so much more, is that the **Group 4** people will review businesses in **pleasuring** and **under-pleasuring** categories better than their **Group 1** counterparts, with the added hypothesis that perhaps **Group 1** people hate everything.
 
 ```{r, echo=F}
 summary(feedb$feedback)
