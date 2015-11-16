@@ -1,26 +1,34 @@
-Is There Just No Pleasing Some People?
+The (Regression) Line Between Joy and Misery
 ========================================================
 author: Brian Frickert
 date: 11/4/2015
+transition: concave
+transition-speed: slow
 
 Coursera Data Science Specialization Captone -- Yelp! dataset
 
-Primary Question
+Primary Questions
 ========================================================
 
 Within the *Yelp! dataset*:
 
-Are there people who are incapable of enjoying businesses in even the most **pleasuring** business categories? And are there people who will love businesses in even the most **under-pleasuring** categories?
+There are people who are incapable of finding pleasure patronizing businesses that provide services that, on average, most everyone seems to love. **The Miserables**
 
+Will these people hate everything?
+
+There are people who seem to enjoy themselves at businesses that provide services that, on average, people don't seem to like all that much. **The Joyous**
+
+Will these people love everything?
 
 Methods
 ========================================================
+incremental: true
 
-Leveraging user feedback to identify what separates these two types of people?
+Leverage user feedback to identify what separates these two types of people?
 
-- Statistical Inference to find feedback differences between **the miserables** and **the joyous**.
-- Natural Language Processing to find which categories appear most in the **pleasuring* and **under-pleasuring** categories.
-- Linear Regression to find whether people with less positive *Yelp!* peer feedback like everything less than those who receive lots of positive feedback.
+- Statistical Inference to demonstrates that **the miserables** receive far less positive feedback than the **the joyous**.
+- Natural Language Processing reveals which words appear most in the **pleasuring** business categories and which appear most in the **under-pleasuring** categories.
+- Linear Regression uncovers whether people with less positive *Yelp!* peer feedback like business, be they in **pleasuring** or **under-pleasuring** categories, less than those who receive lots of positive feedback.
 
 
 Feedback Visualizations
@@ -31,6 +39,8 @@ Feedback Visualizations
 - red drop line: **the joyous**
 - blue: **the miserables**
 - green: total population
+
+**The Joyous** get far more compliments, and have far more friends on *Yelp!*
 
 Under-Pleasuring Categories
 ========================================================
@@ -45,7 +55,11 @@ Under-Pleasuring Categories
 6  13     44  -31 -0.5438596    store
 ```
 
-People With More Feedback Enjoy Restaurants Less!
+<small>People should maybe eat out less.</small>
+
+People With More Feedback Enjoy Restaurants LESS!
 ========================================================
 
 ![plot of chunk unnamed-chunk-2](model.png) 
+***
+Hypothesis refuted! People who get lots of positive feedback on *Yelp!* actually enjoy restaurants **LESS** than people who get very little positive feedback.

@@ -1,5 +1,5 @@
 ---
-title: "Is There Just No Pleasing Some People?"
+title: "The (Regression) Line Between Joy and Misery"
 author: Brian Frickert
 output: pdf_document
 fontsize: 5pt
@@ -30,6 +30,9 @@ names(top10) <- c('category')
 bottom10 <-  dbGetQuery(con,'select categories from brian.bottom_categories limit 3;')
 names(bottom10) <- c('category')
 ```
+```{r, results='hide', echo=F}
+suppressMessages(dbDisconnect(con))
+```
 
 ####The Joyous vs. The Miserables vs. Statistical Inference
 
@@ -37,7 +40,7 @@ Next I wanted to see who rated businesses in the **pleasuring categories** poorl
 
 As can be seen in *Figure 2*, **the joyous**, on average, enjoy far more hot compliments, funny compliments and total feedback (sum of compliments and counts of fans and friends) than **the miserables**, who receive fewer compliments and total feedback than even the average *Yelp!* reviewer. However, they write, on average, only slightly fewer reviews than **the joyous** do and well more than the average *Yelper* does.
 
-```{r, echo=F}
+```{r, echo=F, results='hide'}
 drv <- dbDriver("PostgreSQL")
 con <- dbConnect(drv, host="miley.cda5nmppsk8w.us-east-1.redshift.amazonaws.com", 
                  port="5439", dbname="ncarbdw", user="admin")
@@ -45,6 +48,7 @@ feedb <- dbGetQuery(con,"select
         u.useful_votes	+ u.funny_votes	+ u.cool_votes + u.fan_count	+ 
         u.friend_count	+ u.hot_compliments	+ u.writer_compliments	+ u.photos_compliments	+ 
         u.cool_compliments	+ u.funny_compliments	+ u.cute_compliments	+ u.plain_compliments feedback from brian.user u;")
+dbDisconnect(con)
 ```
 
 So given that **the joyous** and **the miserables** differ so much in terms of how they are perceived by the *Yelp!* community, I decided to assign each *Yelper* a **feedback group** (**1 through 4**) based on the summary below. **Group 1** reviewers are those who have received between **0 and 2** items of total feedback, **Group 2** have received between **3 and 10**, and so on. Again, the hypothesis here, as extrapolated from the discovery of how **the joyous** are complimented so much more, is that the **Group 4** people, those who have between **42 and 229,400** items of positive feedback, will review businesses in **pleasuring** and **under-pleasuring** categories better than their **Group 1** counterparts, with the added hypothesis that perhaps **Group 1** people hate everything.
@@ -109,7 +113,7 @@ suppressMessages(library(dplyr))
 df$diff <- df$joy.tsv - df$misery.tsv
 df$pct.diff <- df$diff/(df$joy.tsv + df$misery.tsv)
 df$names <- row.names(df)
-names(df)[1:2] <- c('joy', 'misery')
+names(df)[1:2] <- c('pleasuring', 'under.pleasuring')
 ```
 
 So, to finally see how the category stem words interplayed with the perception of a reviewer among his or her peers, I created a term matrix for each category combination and then merged that matrix with a data set of average star ratings for each **category combination** according to what feedback group the reviewer falls in (**1**, **2**, **3** or **4**).
@@ -189,6 +193,8 @@ names(dat) <- c('type','cnt')
 df.avgs <- data.frame(as.numeric(avgs.out), stringsAsFactors = F)
 names(df.avgs) <- 'cnt'
 
+review.dat <- dat
+
 plot1 <- g(dat,df.avgs, t='Review Counts',x.label='Means of Review Counts')
 
 #feedback
@@ -208,6 +214,8 @@ names(df.avgs) <- 'cnt'
 
 plot2 <- g(dat,df.avgs, t='Feedback',x.label='Means of Total Feedback')
 
+feed.dat <- dat
+
 #hot
 joyous.out <- df.joyous.out$hot
 miserables.out <- df.miserables.out$hot
@@ -222,6 +230,8 @@ dat <- data.frame(rbind(dat,dat2), stringsAsFactors = F)
 names(dat) <- c('type','cnt')
 df.avgs <- data.frame(as.numeric(avgs.out), stringsAsFactors = F)
 names(df.avgs) <- 'cnt'
+
+hot.dat <- dat
 
 plot3 <- g(dat,df.avgs,t='Compliments: Hot',x.label='Means of Hot Compliments')
 
@@ -240,6 +250,8 @@ names(dat) <- c('type','cnt')
 df.avgs <- data.frame(as.numeric(avgs.out), stringsAsFactors = F)
 names(df.avgs) <- 'cnt'
 
+funny.dat <- dat
+
 plot4 <- g(dat,df.avgs, t='Compliments: Funny',x.label='Means of Funny Compliments')
 
 suppressMessages(require(gridExtra))
@@ -248,19 +260,23 @@ grid.arrange(plot3, plot4, ncol=2,nrow=1)
 
 ```{r, echo=F,fig.height=2}
 grid.arrange(plot2, plot1, ncol=2,nrow=1)
+
+feed.joy <- as.integer(filter(feed.dat, type == 'joy')$cnt)
+feed.misery <- as.integer(filter(feed.dat, type == 'misery')$cnt)
+t <- t.test(feed.joy, feed.misery)
 ```
 
-Furthermore, Student's t-Tests confirm that the differences between each distribution's sampled means are indeed not equal to zero.
+Furthermore, Student's t-Tests confirm that the differences between each distribution's sampled means for are indeed not equal to zero. Below is the t-Test output for comparing the sampled means of total feedback for **the miserables** and **the joyous**, which shows that the difference between the two sampled means is **`r round(t$conf.int[1], 3) ` and `r round(t$conf.int[2], 3) `**.
 
-```{r, echo=F}
-#t.tests
+```{r,echo=F}
+t
 ```
 
 ####Figure 3
 Here are some examples of words more commonly found in **pleasuring** categories than **under-pleasuring** categories. Not surprisingly, these words are somewhat affirming -- active, life, beauty.
 
 ```{r, echo=F}
-head(arrange(filter(df, misery > 0), desc(diff)))
+head(arrange(filter(df, under.pleasuring > 0), desc(diff)))
 ```
 
 ####Figure 4
@@ -268,7 +284,7 @@ head(arrange(filter(df, misery > 0), desc(diff)))
 Words more likely to appear in **under-pleasuring** categories of businesses can be found below:
 
 ```{r,echo=F}
-head(arrange(filter(df, misery > 0), diff))
+head(arrange(filter(df, under.pleasuring > 0), diff))
 ```
 
 ####Figure 5<br />
